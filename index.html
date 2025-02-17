@@ -6,13 +6,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <title>Викторина</title>
+
+  <!-- Telegram Login Widget -->
+  <script async src="https://telegram.org/js/telegram-widget.js?7"
+    data-telegram-login="web3py_bot" data-size="large" data-radius="10" data-request-access="write"></script>
 </head>
 <body>
   <div id="container">
     <div id="welcome-screen">
-      <h1>Регистрация через Telegram ID</h1>
-      <input type="text" id="telegram-id" placeholder="Введите ваш Telegram ID">
-      <button id="register-btn">Зарегистрироваться</button>
+      <h1>Войдите через Telegram</h1>
+      <div id="telegram-login"></div>
     </div>
 
     <div id="quiz-screen" class="hidden">
