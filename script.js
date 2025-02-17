@@ -20,14 +20,15 @@ const questions = [
   }
 ];
 
-document.getElementById('register-btn').addEventListener('click', () => {
-  userId = document.getElementById('telegram-id').value;
+document.getElementById('telegram-login').addEventListener('click', () => {
+  // Ваш код для получения ID пользователя через Telegram (из Telegram Login Widget)
+  userId = 'user_telegram_id';  // Замените на реальный способ получения ID
   if (userId.trim()) {
     document.getElementById('welcome-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.remove('hidden');
     startQuiz();
   } else {
-    alert('Пожалуйста, введите ваш Telegram ID');
+    alert('Пожалуйста, войдите через Telegram');
   }
 });
 
