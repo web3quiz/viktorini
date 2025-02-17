@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Викторина</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="gem">GEM: <span id="gemCount">0</span></span>
+            <span class="telegramId">ID: <span id="telegramId">Не определен</span></span>
+        </div>
+        <div class="quiz-container">
+            <div class="question" id="question"></div>
+            <div class="answers" id="answers"></div>
+            <button class="next-question" id="nextQuestion" onclick="loadNextQuestion()">Следующий вопрос</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <!-- Добавление Telegram Web App SDK -->
+    <script async src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        // Инициализация Telegram Web App
+        Telegram.WebApp.init();
+
+        // Получение данных пользователя (например, ID)
+        let telegramUser = Telegram.WebApp.initDataUnsafe;
+        document.getElementById('telegramId').textContent =
