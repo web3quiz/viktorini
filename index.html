@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <title>Викторина</title>
+</head>
+<body>
+  <div id="container">
+    <div id="welcome-screen">
+      <h1>Регистрация через Telegram ID</h1>
+      <input type="text" id="telegram-id" placeholder="Введите ваш Telegram ID">
+      <button id="register-btn">Зарегистрироваться</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+      <h2 id="question"></h2>
+      <div id="options"></div>
+      <p>Баллы: <span id="score">0</span></p>
+    </div>
+
+    <div id="profile-screen" class="hidden">
+      <h1>Ваш профиль</h1>
+      <p>Telegram ID: <span id="user-id"></span></p>
+      <p>Баллы: <span id="user-score"></span></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
