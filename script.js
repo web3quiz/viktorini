@@ -14,6 +14,14 @@ const questions = [
         answers: ["Часть", "Заголовок", "Сура", "Аят"],
 	correctAnswer: 2
     },
+	{			
+question: 	"	Сколько сур в Коране?	",
+answers: ["		112	",
+"		113	",
+"		114	",
+"		115	"],
+		correctAnswer: 2	
+},			
     {
         question: "Какой оператор используется для сравнения в JavaScript?",
         answers: ["=", "==", "===", "<>"],
