@@ -17,7 +17,7 @@ body {
 
 .container {
     text-align: center;
-    position: relative;
+    position: static;
     max-width: 800px;
     width: 100%;
     padding: 20px;
@@ -101,7 +101,7 @@ body {
 }
 
 .next-question:hover {
-    background-color: #42326C;
+    background-color: #160033;
     transform: translateY(-5px);
 }
 
