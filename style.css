@@ -6,8 +6,8 @@
 
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #0a0a0a;
-    color: #fff;
+    background-color: var(--tg-theme-bg-color);
+    color: var(--tg-theme-bg-color);
     display: flex;
     justify-content: center;
     align-items: center;
