@@ -18,7 +18,7 @@ body {
 .container {
     text-align: center;
     position: relative;
-    max-width: 800px;
+    max-width: 100%;
     width: 100%;
     padding: 20px;
     background-color: #160033;
