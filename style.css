@@ -18,7 +18,7 @@ body {
 .container {
     text-align: center;
     position: relative;
-    max-width: 100%;
+    max-width: 800px;
     width: 100%;
     padding: 20px;
     background-color: #160033;
@@ -61,6 +61,7 @@ top: 20px;
     flex-direction: column;
     align-items: center;
     margin-bottom: 30px;
+    color: #fff;
 }
 
 .answers button {
@@ -89,7 +90,7 @@ top: 20px;
 
 .next-question {
     padding: 15px 30px;
-    background-color: #444;
+    background-color: #42326C;
     color: #fff;
     border: none;
     cursor: pointer;
@@ -102,7 +103,7 @@ top: 20px;
 }
 
 .next-question:hover {
-    background-color: #555;
+    background-color: #42326C;
     transform: translateY(-5px);
 }
 
