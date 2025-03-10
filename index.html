@@ -9,24 +9,34 @@
 </head>
 <body>
     <div class="container">
+        <!-- Шапка с навигацией -->
         <div class="header">
             <span class="gem">GEM: <span id="gemCount">0</span></span>
             <span class="telegramId">ID: <span id="telegramId">Не определен</span></span>
+            <button class="nav-button" onclick="showPage('quiz')">Викторина</button>
+            <button class="nav-button" onclick="showPage('about')">О викторине</button>
         </div>
-        <div class="quiz-container">
-            <div class="question" id="question"></div>
-            <div class="answers" id="answers"></div>
-            <button class="next-question" id="nextQuestion" onclick="loadNextQuestion()">Следующий вопрос</button>
+
+        <!-- Страница викторины -->
+        <div id="quiz-page" class="page active">
+            <div class="quiz-container" id="quiz-container">
+                <div class="question" id="question"></div>
+                <div class="answers" id="answers"></div>
+                <button class="next-question" id="nextQuestion" onclick="loadNextQuestion()">Следующий вопрос</button>
+                <button class="claim-gem" id="claimGem" onclick="claimGem()" style="display: none;">Забрать GEM</button>
+                <button class="restart-quiz" id="restartQuiz" onclick="restartQuiz()" style="display: none;">Начать заново</button>
+            </div>
+        </div>
+
+        <!-- Страница "О викторине" -->
+        <div id="about-page" class="page">
+            <h1>О викторине</h1>
+            <p>Добро пожаловать на страницу с информацией о викторине! Здесь вы можете узнать больше о правилах и целях этой викторины.</p>
+            <p>Викторина состоит из множества вопросов, связанных с исламской культурой и историей. Ваша задача — правильно отвечать на вопросы и зарабатывать GEM.</p>
         </div>
     </div>
 
     <script src="script.js"></script>
-    <!-- Добавление Telegram Web App SDK -->
     <script async src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        // Инициализация Telegram Web App
-        Telegram.WebApp.init();
-
-        // Получение данных пользователя (например, ID)
-        let telegramUser = Telegram.WebApp.initDataUnsafe;
-        document.getElementById('telegramId').textContent =
+</body>
+</html>
