@@ -1,6 +1,6 @@
 let currentQuestionIndex = 0;
 let score = 0;
-let telegramId = "Не определен";  // В реальном приложении здесь будет логика получения ID пользователя
+let telegramId = "Не определен";
 
 // Викторины (вопросы, ответы и правильный ответ)
 const questions = [
@@ -270,7 +270,6 @@ const questions = [
 function loadQuestion() {
     const questionData = questions[currentQuestionIndex];
     document.getElementById("question").innerText = questionData.question;
-
     const answersContainer = document.getElementById("answers");
     answersContainer.innerHTML = "";
     questionData.answers.forEach((answer, index) => {
@@ -285,7 +284,6 @@ function loadQuestion() {
 function checkAnswer(index) {
     const questionData = questions[currentQuestionIndex];
     const buttons = document.querySelectorAll(".answers button");
-
     if (index === questionData.correctAnswer) {
         score++;
         document.getElementById("gemCount").innerText = score;
@@ -294,9 +292,8 @@ function checkAnswer(index) {
         buttons[index].classList.add("incorrect");
         buttons[questionData.correctAnswer].classList.add("correct");
     }
-
-    // Отключаем все кнопки после ответа
     buttons.forEach(button => button.disabled = true);
+    setTimeout(loadNextQuestion, 1000);
 }
 
 // Функция для загрузки следующего вопроса
@@ -305,16 +302,49 @@ function loadNextQuestion() {
     if (currentQuestionIndex < questions.length) {
         loadQuestion();
     } else {
-        alert("Вы завершили викторину!");
+        document.getElementById("nextQuestion").style.display = "none";
+        document.getElementById("claimGem").style.display = "block";
     }
+}
+
+// Функция для завершения викторины
+function claimGem() {
+    alert("Викторина завершена! Вы заработали " + score + " GEM.");
+    document.getElementById("nextQuestion").style.display = "none";
+    document.getElementById("claimGem").style.display = "none";
+    document.getElementById("restartQuiz").style.display = "block";
+}
+
+// Функция для перезапуска викторины
+function restartQuiz() {
+    currentQuestionIndex = 0;
+    score = 0;
+    document.getElementById("gemCount").innerText = score;
+    document.getElementById("restartQuiz").style.display = "none";
+    document.getElementById("nextQuestion").style.display = "block";
+    document.getElementById("claimGem").style.display = "none";
+    loadQuestion();
 }
 
 // Функция для получения Telegram ID (эмуляция)
 function getTelegramId() {
-    // Для настоящего сайта потребуется API Telegram для получения ID
-    telegramId = "123456789"; // Эмуляция Telegram ID
+    telegramId = "123456789";
     document.getElementById("telegramId").innerText = telegramId;
 }
+
+// Функция для переключения страниц
+function showPage(pageId) {
+    const pages = document.querySelectorAll(".page");
+    pages.forEach(page => {
+        page.classList.remove("active");
+    });
+    document.getElementById(`${pageId}-page`).classList.add("active");
+}
+
+// Инициализация
+getTelegramId();
+loadQuestion();
+showPage('quiz'); // По умолчанию показываем страницу викторины
 
 // Инициализация
 getTelegramId();
