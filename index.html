@@ -29,19 +29,55 @@
     <!-- Страница "О викторине" -->
     <div id="about-page" class="page">
         <h1>О викторине</h1>
-        <p>Добро пожаловать на страницу с информацией о викторине! Здесь вы можете узнать больше о правилах и целях этой викторины.</p>
-        <p>Викторина состоит из множества вопросов, связанных с исламской культурой и историей. Ваша задача — правильно отвечать на вопросы и зарабатывать GEM.</p>
+        <p>Здесь вы можете узнать больше о правилах викторины.</p>
+    </div>
+
+    <!-- Страница "Профиль" -->
+    <div id="profile-page" class="page">
+        <h1>Профиль</h1>
+        <p><strong>Ваш ID:</strong> <span id="profileTelegramId">Не определен</span></p>
+        <p><strong>Ваши GEM:</strong> <span id="profileGemCount">0</span></p>
+    </div>
+
+    <!-- Страница "Лидеры" -->
+    <div id="leaders-page" class="page">
+        <h1>Таблица лидеров</h1>
+        <ul id="leaderboard">
+            <li>Загрузка...</li>
+        </ul>
+    </div>
+
+    <!-- Страница "Настройки" -->
+    <div id="settings-page" class="page">
+        <h1>Настройки</h1>
+        <label>
+            <input type="checkbox" id="darkModeToggle"> Тёмная тема
+        </label>
+        <label>
+            <input type="checkbox" id="soundToggle"> Звуки
+        </label>
     </div>
 
     <!-- Кнопки навигации -->
     <div class="navigation">
-    <button class="nav-button" onclick="showPage('quiz')">
-        <img src="icons/quiz.svg" alt="Викторина">
-    </button>
-    <button class="nav-button" onclick="showPage('about')">
-        <img src="icons/info.svg" alt="О викторине">
-    </button>
+        <button class="nav-button" onclick="showPage('quiz')">
+            <img src="icons/quiz.svg" alt="Викторина">
+        </button>
+        <button class="nav-button" onclick="showPage('about')">
+            <img src="icons/info.svg" alt="О викторине">
+        </button>
+        <button class="nav-button" onclick="showPage('profile')">
+            <img src="icons/profile.svg" alt="Профиль">
+        </button>
+        <button class="nav-button" onclick="showPage('leaders')">
+            <img src="icons/leaders.svg" alt="Лидеры">
+        </button>
+        <button class="nav-button" onclick="showPage('settings')">
+            <img src="icons/settings.svg" alt="Настройки">
+        </button>
+    </div>
 </div>
+
 
 
     <script src="script.js"></script>
