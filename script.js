@@ -115,7 +115,8 @@ function restartQuiz() {
     document.getElementById("nextQuestion").style.display = "flex";
     document.getElementById("claimGem").style.display = "none";
 
-
+    localStorage.removeItem("quizIndex");
+    localStorage.removeItem("quizScore");
 
     loadQuestion();
 }
