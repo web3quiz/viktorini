@@ -188,7 +188,7 @@ body {
     padding: 10px;
     background-color: #160033;
     position: fixed;
-    bottom: 0;
+    bottom: 30px;
     left: 0;
     right: 0;
     z-index: 1000;
@@ -485,4 +485,43 @@ body {
     .shop-grid {
         grid-template-columns: repeat(4, 1fr);
     }
+}
+
+/* Анимация кнопки "Следующий вопрос" */
+.next-question {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.5s ease, transform 0.3s ease;
+}
+
+.next-question.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Прокрутка магазина */
+.shop-container {
+    padding: 20px;
+    background: #160033;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 80vh; /* Ограничение высоты */
+    overflow-y: auto; /* Вертикальная прокрутка */
+    scrollbar-width: thin;
+    scrollbar-color: #5D3A8E #160033;
+}
+
+/* Стилизация прокрутки для Chrome и Safari */
+.shop-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.shop-container::-webkit-scrollbar-track {
+    background: #160033;
+}
+
+.shop-container::-webkit-scrollbar-thumb {
+    background-color: #5D3A8E;
+    border-radius: 10px;
 }
