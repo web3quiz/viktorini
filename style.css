@@ -411,6 +411,20 @@ body {
     margin-bottom: 5px;
 }
 
+/* Кнопка покупки */
+.book-front button {
+    padding: 6px 12px;
+    background-color: #E7BB4C;
+    color: #42326C;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    width: 90%;
+    max-width: 120px;
+    margin-top: 5px;
+}
 
 .book-front button:hover {
     background-color: #d1a441;
