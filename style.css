@@ -263,8 +263,8 @@ body {
 }
 
 .nav-button img {
-    width: 30px; /* Размер иконки */
-    height: 30px;
+    width: 50px; /* Размер иконки */
+    height: 50px;
     
     transition: transform 0.2s ease-in-out;
 }
