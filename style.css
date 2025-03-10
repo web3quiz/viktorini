@@ -20,15 +20,16 @@ body {
     text-align: center;
     max-width: 800px;
     width: 100%;
+    margin: auto;
     padding: 20px;
     background-color: #160033;
     border-radius: 20px;
     box-shadow: 0px 10px 50px rgba(0, 0, 0, 0.5);
     position: relative;
-    min-height: 100vh; /* Чтобы контейнер занимал всю высоту экрана */
+    min-height: auto;
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Распределяем пространство между элементами */
+    justify-content: space-between;
 }
 
 .header {
@@ -36,7 +37,7 @@ body {
     top: 20px;
     right: 20px;
     font-size: 16px;
-    color: #fff;
+    color: #42326C;
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -62,9 +63,11 @@ body {
 .answers {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    margin-bottom: 30px;
-    color: #fff;
+    align-items: center; /* Выравнивание по центру */
+    justify-content: center; /* Центрирование кнопок */
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto; /* Центрирование блока */
 }
 
 .answers button {
@@ -73,8 +76,9 @@ body {
     color: #fff;
     padding: 15px 30px;
     margin: 10px 0;
-    width: 90%;
+    width: 100%; /* Растягиваем кнопку на всю ширину */
     max-width: 350px;
+    text-align: center; /* Центрируем текст */
     cursor: pointer;
     border-radius: 10px;
     font-size: 18px;
@@ -91,6 +95,7 @@ body {
     transform: translateY(0);
 }
 
+
 .next-question {
     padding: 15px 30px;
     background-color: #42326C;
@@ -99,8 +104,13 @@ body {
     cursor: pointer;
     border-radius: 10px;
     font-size: 20px;
-    width: 80%;
+    width: 90%;
     max-width: 350px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto;
     transition: all 0.3s ease-in-out;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 }
@@ -126,15 +136,15 @@ body {
 
 #claimGem, #restartQuiz {
     display: none;
-    background-color: #E7BB4C; /* Золотистый цвет */
+    background-color: #E7BB4C;
     color: #42326C;
-    font-weight: bold; /* Делаем текст жирным */
+    font-weight: bold;
     border: none;
     padding: 15px 30px;
     font-size: 18px;
     cursor: pointer;
     border-radius: 10px;
-    margin: 20px auto; /* Центрирование */
+    margin: 20px auto;
     width: 90%;
     max-width: 350px;
     text-align: center;
@@ -145,7 +155,7 @@ body {
 }
 
 #claimGem:hover, #restartQuiz:hover {
-    background-color: #d1a441; /* Чуть темнее при наведении */
+    background-color: #d1a441;
     transform: translateY(-3px);
 }
 
@@ -153,52 +163,56 @@ body {
     transform: translateY(0);
 }
 
-
-
-
-
-
-#claimGem.show {
-    display: block !important;
+/* Улучшенные кнопки навигации */
+.navigation {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px;
+    background-color: #1e0033;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 60px;
+    box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.2);
 }
 
 .nav-button {
-    padding: 15px 20px;
+    display: flex;
+    align-items: center; /* Центрирование по вертикали */
+    justify-content: center; /* Центрирование по горизонтали */
+    padding: 10px;
     background-color: #5D3A8E;
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 10px;
     font-size: 16px;
-    width: 45%; /* Одинаковая ширина для кнопок */
-    max-width: 200px; /* Максимальная ширина кнопок */
-    transition: background-color 0.3s ease;
+    width: 50px; /* Фиксированный размер для квадратных кнопок */
+    height: 50px;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+    opacity: 0.3; /* Делаем кнопки менее заметными */
+}
+
+.nav-button img {
+    width: 50px; /* Размер иконки */
+    height: 50px;
 }
 
 .nav-button:hover {
     background-color: #42326C;
+    opacity: 0.8; /* При наведении делаем ярче */
 }
 
-.page {
-    display: none; /* По умолчанию все страницы скрыты */
+.nav-button.active {
+    opacity: 1; /* Активная кнопка полностью видима */
+    background-color: #E7BB4C; /* Выделяем цветом */
+    color: #42326C;
+    font-weight: bold;
 }
 
-.page.active {
-    display: block; /* Активная страница отображается */
-}
-
-/* Стили для навигации */
-.navigation {
-    display: flex;
-    justify-content: space-around; /* Равномерное распределение кнопок */
-    padding: 10px;
-    background-color: #160033;
-    position: fixed; /* Фиксируем навигацию внизу */
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000; /* Чтобы навигация была поверх других элементов */
-}
 
 /* Адаптация для мобильных устройств */
 @media (max-width: 600px) {
@@ -219,86 +233,36 @@ body {
         font-size: 16px;
     }
 
+    .navigation {
+        height: 50px;
+    }
+
     .nav-button {
-        font-size: 14px;
-        padding: 10px 15px;
+        width: 50px;
+        height: 50px;
+    }
+
+    .nav-button img {
+        width: 26px;
+        height: 26px;
+    }
+
+    .nav-button:hover img {
+        transform: scale(1.05);
     }
 }
 
-/* Предотвращение увеличения страницы на мобильных устройствах */
-html, body {
-    overflow-x: hidden; /* Отключаем горизонтальную прокрутку */
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    position: relative;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #160033;
-}
-@media (max-width: 600px) {
-    html, body {
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-    }
-
-    .container {
-        width: 400px; /* Фиксированная ширина */
-        max-width: 400px;
-    }
-}
-
-.nav-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-}
-
-.nav-button img {
-    width: 50px; /* Размер иконки */
-    height: 50px;
-    
-    transition: transform 0.2s ease-in-out;
-}
-
-.nav-button img:hover {
-    transform: scale(1.1);
-}
-
-#nextQuestion {
-    display: none;
-    padding: 15px 30px;
-    background-color: #42326C;
+/* Темная тема */
+.dark-mode {
+    background-color: #000;
     color: #fff;
-    border: none;
-    cursor: pointer;
-    border-radius: 10px;
-    font-size: 20px;
-    width: 90%;
-    max-width: 350px;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 20px auto; /* Центрирование */
-    transition: all 0.3s ease-in-out;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-#nextQuestion:hover {
-    background-color: #160033;
-    transform: translateY(-5px);
+.dark-mode .container {
+    background-color: #000;
 }
 
-#nextQuestion:active {
-    transform: translateY(0);
+.dark-mode .answers button {
+    background-color: #333;
+    border-color: #555;
 }
-
