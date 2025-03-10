@@ -229,9 +229,14 @@ body {
         font-size: 20px;
     }
 
-    .answers button, .next-question {
-        width: 100%;
-        font-size: 16px;
+    .answers button {
+        width: 80%;
+        font-size: 18px;
+    }
+
+    .next-question {
+        width: 70%;
+        font-size: 18px;
     }
 
     .navigation {
