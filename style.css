@@ -15,6 +15,7 @@ body {
     overflow: hidden;
 }
 
+/* Общие стили для контейнера */
 .container {
     text-align: center;
     max-width: 800px;
@@ -23,6 +24,11 @@ body {
     background-color: #160033;
     border-radius: 20px;
     box-shadow: 0px 10px 50px rgba(0, 0, 0, 0.5);
+    position: relative;
+    min-height: 100vh; /* Чтобы контейнер занимал всю высоту экрана */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Распределяем пространство между элементами */
 }
 
 .header {
@@ -137,15 +143,15 @@ body {
 }
 
 .nav-button {
-    padding: 10px 20px;
+    padding: 15px 20px;
     background-color: #5D3A8E;
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 10px;
     font-size: 16px;
-    margin-left: 15px;
-    text-decoration: none;
+    width: 45%; /* Одинаковая ширина для кнопок */
+    max-width: 200px; /* Максимальная ширина кнопок */
     transition: background-color 0.3s ease;
 }
 
@@ -159,4 +165,60 @@ body {
 
 .page.active {
     display: block; /* Активная страница отображается */
+}
+
+/* Стили для навигации */
+.navigation {
+    display: flex;
+    justify-content: space-around; /* Равномерное распределение кнопок */
+    padding: 10px;
+    background-color: #160033;
+    position: fixed; /* Фиксируем навигацию внизу */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000; /* Чтобы навигация была поверх других элементов */
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+
+    .header {
+        font-size: 14px;
+    }
+
+    .question {
+        font-size: 20px;
+    }
+
+    .answers button, .next-question {
+        width: 100%;
+        font-size: 16px;
+    }
+
+    .nav-button {
+        font-size: 14px;
+        padding: 10px 15px;
+    }
+}
+
+/* Предотвращение увеличения страницы на мобильных устройствах */
+html, body {
+    overflow-x: hidden; /* Отключаем горизонтальную прокрутку */
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #160033;
 }
