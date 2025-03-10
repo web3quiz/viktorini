@@ -89,10 +89,20 @@ function checkAnswer(index) {
     setTimeout(loadNextQuestion, 1000);
 }
 
-// Функция для загрузки следующего вопроса
+// Функция для загрузки следующего вопроса (исправлено для мобильных)
 function loadNextQuestion() {
     currentQuestionIndex++;
-    loadQuestion();
+
+    // Проверяем, остались ли вопросы
+    if (currentQuestionIndex < questions.length) {
+        setTimeout(() => {
+            loadQuestion();
+            window.scrollTo(0, 0); // Принудительно прокручиваем вверх
+        }, 500); // Уменьшаем задержку
+    } else {
+        document.getElementById("nextQuestion").style.display = "none";
+        document.getElementById("claimGem").style.display = "flex";
+    }
 }
 
 // Функция для завершения викторины
