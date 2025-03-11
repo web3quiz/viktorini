@@ -48,22 +48,22 @@
     </button>
 </div>
 
-        <!-- Страница "Профиль" -->
-           <div id="profile-page" class="page">
-             <h1>Профиль</h1>
-             <p><strong>Ваш ID:</strong> <span id="profileTelegramId">Не определен</span></p>
-             <p><strong>Ваши GEM:</strong> <span id="profileGemCount">0</span></p>
-           </div>
- 
-         <!-- Страница "Лидеры" -->
-         <div id="leaders-page" class="page">
-             <h1>Таблица лидеров</h1>
-             <ul id="leaderboard">
-                 <li>Загрузка...</li>
-             </ul>
-         </div>
 
-     
+
+        <!-- Страница "Профиль" -->
+        <div id="profile-page" class="page">
+            <h1>Профиль</h1>
+            <p><strong>Ваш ID:</strong> <span id="profileTelegramId">Не определен</span></p>
+            <p><strong>Ваши GEM:</strong> <span id="profileGemCount">0</span></p>
+        </div>
+
+        <!-- Страница "Лидеры" -->
+        <div id="leaders-page" class="page">
+            <h1>Таблица лидеров</h1>
+            <ul id="leaderboard">
+                <li>Загрузка...</li>
+            </ul>
+        </div>
 
         <!-- Страница "Настройки" -->
         <!-- Страница магазина -->
@@ -77,13 +77,11 @@
         <div class="book-item" onclick="flipBook(this)">
             <div class="book-front">
                 <img src="icons/book1.svg" alt="Искусство войны">
-                <div class="book-footer">
-                    <span class="price">15 GEM</span>
-                    <button onclick="buyItem(15, 'Искусство войны', event)">Купить</button>
-                </div>
+                <h3>📖 Искусство войны</h3>
+                <span class="price">15 GEM</span>
+                <button onclick="buyItem(15, 'Искусство войны', event)">Купить</button>
             </div>
             <div class="book-back">
-                <h3>📖 Искусство войны</h3>
                 <p>Трактат о стратегии и тактике ведения войны, написанный Сунь-Цзы.</p>
             </div>
         </div>
@@ -91,13 +89,11 @@
         <div class="book-item" onclick="flipBook(this)">
             <div class="book-front">
                 <img src="icons/book2.svg" alt="Кто заплачет, когда ты умрешь?">
-                <div class="book-footer">
-                    <span class="price">20 GEM</span>
-                    <button onclick="buyItem(20, 'Кто заплачет, когда ты умрешь?', event)">Купить</button>
-                </div>
+                <h3>📖 Кто заплачет, когда ты умрешь?</h3>
+                <span class="price">20 GEM</span>
+                <button onclick="buyItem(20, 'Кто заплачет, когда ты умрешь?', event)">Купить</button>
             </div>
             <div class="book-back">
-                <h3>📖 Кто заплачет, когда ты умрешь?</h3>
                 <p>Мотивационная книга Робина Шармы о смысле жизни и саморазвитии.</p>
             </div>
         </div>
@@ -105,13 +101,11 @@
         <div class="book-item" onclick="flipBook(this)">
             <div class="book-front">
                 <img src="icons/book3.svg" alt="Атлант расправил плечи">
-                <div class="book-footer">
-                    <span class="price">25 GEM</span>
-                    <button onclick="buyItem(25, 'Атлант расправил плечи', event)">Купить</button>
-                </div>
+                <h3>📖 Атлант расправил плечи</h3>
+                <span class="price">25 GEM</span>
+                <button onclick="buyItem(25, 'Атлант расправил плечи', event)">Купить</button>
             </div>
             <div class="book-back">
-                <h3>📖 Атлант расправил плечи</h3>
                 <p>Философский роман Айн Рэнд о борьбе интеллекта против бюрократии.</p>
             </div>
         </div>
@@ -119,9 +113,8 @@
 </div>
 
 
-
     <button class="back-button" onclick="showPage('quiz')">
-        <alt="Назад"> Назад к викторине
+        <img src="icons/back.svg" alt="Назад"> Назад к викторине
     </button>
 </div>
 
