@@ -200,7 +200,7 @@ body {
     align-items: center;
     justify-content: center;
     padding: 10px;
-    background-color: #5D3A8E;
+    background-color: #160033;
     border: none;
     cursor: pointer;
     border-radius: 10px;
@@ -216,13 +216,13 @@ body {
 }
 
 .nav-button:hover {
-    background-color: #42326C;
+    background-color: #160033;
     opacity: 0.8;
 }
 
 .nav-button.active {
     opacity: 1;
-    background-color: #E7BB4C;
+    background-color: #160033;
 }
 
 
