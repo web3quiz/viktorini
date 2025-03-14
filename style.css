@@ -214,6 +214,7 @@ body {
 .nav-button img {
     width: 30px;
     height: 30px;
+    opacity: 1;
 }
 
 .nav-button:hover {
