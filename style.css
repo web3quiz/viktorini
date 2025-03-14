@@ -192,6 +192,7 @@ body {
     left: 0;
     right: 0;
     z-index: 1000;
+    opacity: 0;
 }
 
 /* Улучшенные кнопки навигации */
@@ -207,7 +208,7 @@ body {
     width: 30px;
     height: 30px;
     transition: background-color 0.3s ease, opacity 0.3s ease;
-    opacity: 0.5;
+    opacity: 0;
 }
 
 .nav-button img {
