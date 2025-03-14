@@ -57,16 +57,25 @@
     <h1>Получите больше GEM💎</h1>
     <p>Выполняйте простые задания и получайте награды!</p>
 
+    <!-- Реферальная система -->
+    <div class="referral-section">
+        <h2>Пригласите друзей</h2>
+        <p>Поделитесь своей реферальной ссылкой и получайте GEM за каждого приглашённого друга.</p>
+        <div class="referral-link">
+            <input type="text" id="referralLink" readonly>
+            <button onclick="copyReferralLink()">Копировать</button>
+        </div>
+        <p class="referral-stats">Приглашено друзей: <span id="referralCount">0</span></p>
+    </div>
+
+    <!-- Другие задания -->
     <h2>Как получить GEM'ы?</h2>
-    
     <button class="reward-button" onclick="inviteFriend()">
         <img src="icons/friend.svg" alt="Пригласить друга"> Пригласить друга
     </button>
-
     <button class="reward-button" onclick="subscribeTelegram()">
         <img src="icons/telegram.svg" alt="Telegram"> Подписаться на Telegram
     </button>
-
 </div>
 
 

@@ -1141,3 +1141,56 @@ body {
     color: #fff;
     margin: 5px 0;
 }
+
+
+
+
+
+/* Стили для реферальной системы */
+.referral-section {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.referral-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.referral-link input {
+    width: 60%;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    text-align: center;
+}
+
+.referral-link button {
+    padding: 10px 20px;
+    background-color: #E7BB4C;
+    color: #42326C;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.referral-link button:hover {
+    background-color: #d1a441;
+}
+
+.referral-stats {
+    font-size: 16px;
+    color: #fff;
+    margin-top: 10px;
+}
