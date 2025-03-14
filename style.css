@@ -245,7 +245,7 @@ body {
     padding: 10px;
     background-color: #160033;
     position: fixed;
-    bottom: 30px;
+    bottom: 15px;
     left: 0;
     right: 0;
     z-index: 1000;
@@ -268,8 +268,8 @@ body {
 }
 
 .nav-button img {
-    width: 30px;
-    height: 30px;
+    width: 25px;
+    height: 25px;
 }
 
 .nav-button:hover {
@@ -309,17 +309,17 @@ body {
     }
 
     .navigation {
-        height: 50px;
+        height: 30px;
     }
 
     .nav-button {
-        width: 30px;
-        height: 30px;
+        width: 25px;
+        height: 25px;
     }
 
     .nav-button img {
-        width: 30px;
-        height: 30px;
+        width: 25px;
+        height: 25px;
     }
 
     .nav-button:hover img {
