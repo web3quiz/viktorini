@@ -313,40 +313,39 @@ function updateGemDisplay() {
     localStorage.setItem("quizScore", score);
 }
 
-// 🔄 Загрузка вопроса с анимацией
 function loadQuestion() {
-    if (currentQuestionIndex >= shuffledQuestions.length) {
-        document.getElementById("nextQuestion").style.display = "none";
-        document.getElementById("claimGem").style.display = "flex";
-        return;
-    }
+  // Если вопросы закончились, перемешиваем их заново
+  if (currentQuestionIndex >= shuffledQuestions.length) {
+      shuffledQuestions = shuffleArray(questions); // Перемешиваем вопросы
+      currentQuestionIndex = 0; // Сбрасываем индекс
+  }
 
-    const questionData = shuffledQuestions[currentQuestionIndex];
-    const questionElement = document.getElementById("question");
-    const answersContainer = document.getElementById("answers");
-    const nextButton = document.getElementById("nextQuestion");
+  const questionData = shuffledQuestions[currentQuestionIndex];
+  const questionElement = document.getElementById("question");
+  const answersContainer = document.getElementById("answers");
+  const nextButton = document.getElementById("nextQuestion");
 
-    questionElement.classList.remove("show");
-    nextButton.classList.remove("show");
-    answersContainer.innerHTML = "";
+  questionElement.classList.remove("show");
+  nextButton.classList.remove("show");
+  answersContainer.innerHTML = "";
 
-    setTimeout(() => {
-        questionElement.innerText = questionData.question;
-        questionElement.classList.add("show");
+  setTimeout(() => {
+      questionElement.innerText = questionData.question;
+      questionElement.classList.add("show");
 
-        questionData.answers.forEach((answer, index) => {
-            const button = document.createElement("button");
-            button.classList.add("answer-button");
-            button.innerText = answer;
-            button.onclick = () => checkAnswer(index);
+      questionData.answers.forEach((answer, index) => {
+          const button = document.createElement("button");
+          button.classList.add("answer-button");
+          button.innerText = answer;
+          button.onclick = () => checkAnswer(index);
 
-            setTimeout(() => button.classList.add("show"), index * 100);
-            answersContainer.appendChild(button);
-        });
+          setTimeout(() => button.classList.add("show"), index * 100);
+          answersContainer.appendChild(button);
+      });
 
-        setTimeout(() => nextButton.classList.add("show"), 500);
-        saveProgress();
-    }, 300);
+      setTimeout(() => nextButton.classList.add("show"), 500);
+      saveProgress();
+  }, 300);
 }
 
 // 🔄 Проверка ответа
@@ -738,3 +737,274 @@ function generateReferralLink() {
   const baseUrl = "https://web3quiz.github.io/viktorini/"; // Замените на ваш URL
   return `${baseUrl}?ref=${userId}`;
 }
+
+// Удаляем или комментируем этот код
+// document.getElementById("telegramId").innerText = telegramId;
+// document.getElementById("profileTelegramId").innerText = telegramId;
+
+// Обновление GEM в игре и профиле
+function updateGemDisplay() {
+  // Удаляем строки, связанные с header
+  // document.getElementById("gemCount").innerText = score;
+
+  // Оставляем обновление GEM в других местах (если нужно)
+  document.getElementById("profileGemCount").innerText = score;
+  document.getElementById("gemBalance").innerText = score;
+  localStorage.setItem("quizScore", score);
+}
+
+
+// Удаляем эту функцию
+function claimGem() {
+  alert("Викторина завершена! Вы заработали " + score + " GEM.");
+  localStorage.clear();
+}
+
+
+
+// Функция для получения данных пользователя из Telegram Web App
+function getTelegramUserData() {
+  if (window.Telegram && window.Telegram.WebApp) {
+      const user = window.Telegram.WebApp.initDataUnsafe.user;
+
+      if (user) {
+          // Возвращаем имя и ID пользователя
+          return {
+              id: user.id,
+              firstName: user.first_name,
+              lastName: user.last_name,
+              username: user.username,
+          };
+      }
+  }
+  return null; // Если данные недоступны
+}
+
+// Пример использования
+document.addEventListener("DOMContentLoaded", () => {
+  const userData = getTelegramUserData();
+  if (userData) {
+      console.log("ID пользователя:", userData.id);
+      console.log("Имя пользователя:", userData.firstName);
+  } else {
+      console.log("Данные пользователя недоступны.");
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Функция для отправки результатов в Telegram бот
+async function sendResultsToBot(score) {
+  const userData = getTelegramUserData();
+  if (!userData) {
+      console.log("Данные пользователя недоступны.");
+      return;
+  }
+
+  const botToken = "7512030725:AAHijyQ1c8RaJ7EwSbYMxFNkFmraQcYNC3s"; // Замените на токен вашего бота
+  const chatId = "YOUR_CHAT_ID"; // Замените на ID чата (например, ваш личный ID)
+
+  const message = `Пользователь ${userData.firstName} (ID: ${userData.id}) набрал ${score} GEM в викторине!`;
+
+  try {
+      const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+              chat_id: chatId,
+              text: message,
+          }),
+      });
+
+      if (response.ok) {
+          console.log("Результаты отправлены в Telegram бот.");
+      } else {
+          console.error("Ошибка при отправке результатов:", await response.text());
+      }
+  } catch (error) {
+      console.error("Ошибка при отправке запроса:", error);
+  }
+}
+
+// Пример использования
+document.addEventListener("DOMContentLoaded", () => {
+  const score = 100; // Пример результата
+  sendResultsToBot(score);
+});
+
+const initData = window.Telegram.WebApp.initData;
+
+fetch("/auth/telegram", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ initData }),
+})
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error("Ошибка авторизации:", error));
+
+
+
+
+    const crypto = require("crypto");
+
+function verifyTelegramData(initData, botToken) {
+    const params = new URLSearchParams(initData);
+    const hash = params.get("hash");
+    params.delete("hash");
+
+    const dataCheckString = Array.from(params.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => `${key}=${value}`)
+        .join("\n");
+
+    const secretKey = crypto.createHash("sha256").update(botToken).digest();
+    const computedHash = crypto
+        .createHmac("sha256", secretKey)
+        .update(dataCheckString)
+        .digest("hex");
+
+    return computedHash === hash;
+}
+
+// Пример использования
+app.post("/auth/telegram", (req, res) => {
+    const { initData } = req.body;
+    const botToken = "YOUR_BOT_TOKEN"; // Замените на токен вашего бота
+
+    if (verifyTelegramData(initData, botToken)) {
+        res.json({ success: true, message: "Авторизация успешна!" });
+    } else {
+        res.status(401).json({ success: false, message: "Ошибка авторизации." });
+    }
+});
+
+
+function saveUserResults(userId, score) {
+  const results = JSON.parse(localStorage.getItem("quizResults")) || {};
+  results[userId] = score;
+  localStorage.setItem("quizResults", JSON.stringify(results));
+}
+
+// Пример использования
+document.addEventListener("DOMContentLoaded", () => {
+  const userData = getTelegramUserData();
+  if (userData) {
+      saveUserResults(userData.id, score);
+  }
+});
+
+
+// Функция для сохранения результатов на сервере
+async function saveResults(score) {
+  const initData = window.Telegram.WebApp.initData;
+
+  try {
+      const response = await fetch("https://your-project.glitch.me/save-results", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ initData, score }),
+      });
+
+      if (response.ok) {
+          console.log("Результаты сохранены на сервере.");
+      } else {
+          console.error("Ошибка при сохранении результатов:", await response.text());
+      }
+  } catch (error) {
+      console.error("Ошибка при отправке запроса:", error);
+  }
+}
+
+// Функция для получения результатов с сервера
+async function getResults(userId) {
+  try {
+      const response = await fetch(`https://your-project.glitch.me/get-results?userId=${userId}`);
+      const data = await response.json();
+      return data.score;
+  } catch (error) {
+      console.error("Ошибка при получении результатов:", error);
+      return 0;
+  }
+}
+
+// Пример использования
+document.addEventListener("DOMContentLoaded", async () => {
+  const userData = getTelegramUserData();
+  if (userData) {
+      // Сохраняем результаты
+      await saveResults(score);
+
+      // Получаем результаты
+      const savedScore = await getResults(userData.id);
+      console.log("Сохранённые результаты:", savedScore);
+  }
+});
+
+
+
+// Функция для сохранения результатов на сервере
+async function saveResults(score) {
+  const initData = window.Telegram.WebApp.initData;
+
+  try {
+      const response = await fetch("https://your-project.glitch.me/save-results", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ initData, score }),
+      });
+
+      if (response.ok) {
+          console.log("Результаты сохранены на сервере.");
+      } else {
+          console.error("Ошибка при сохранении результатов:", await response.text());
+      }
+  } catch (error) {
+      console.error("Ошибка при отправке запроса:", error);
+  }
+}
+
+// Функция для получения результатов с сервера
+async function getResults(userId) {
+  try {
+      const response = await fetch(`https://your-project.glitch.me/get-results?userId=${userId}`);
+      const data = await response.json();
+      return data.score;
+  } catch (error) {
+      console.error("Ошибка при получении результатов:", error);
+      return 0;
+  }
+}
+
+// Пример использования
+document.addEventListener("DOMContentLoaded", async () => {
+  const userData = getTelegramUserData();
+  if (userData) {
+      // Сохраняем результаты
+      await saveResults(score);
+
+      // Получаем результаты
+      const savedScore = await getResults(userData.id);
+      console.log("Сохранённые результаты:", savedScore);
+  }
+});

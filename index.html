@@ -9,15 +9,12 @@
 </head>
 <body>
     <div class="container">
-        <!-- Шапка с навигацией -->
-        <div class="header">
-            <span class="gem">GEM: <span id="gemCount">0</span></span>
-            <span class="telegramId">ID: <span id="telegramId">Не определен</span></span>
-        </div>
+      
+
 
         <!-- Главная страница -->
 <div id="home-page" class="page active">
-    
+
 
 <!-- Аватарка и имя пользователя -->
 <div class="profile-info">
@@ -40,14 +37,14 @@
     <button class="back-button" onclick="showPage('home')">
         <img src="icons/back.svg" alt="Назад">
     </button>
-            <div class="quiz-container" id="quiz-container">
-                <div class="question" id="question"></div>
-                <div class="answers" id="answers"></div>
-                <button class="next-question" id="nextQuestion" onclick="loadNextQuestion()">Следующий вопрос</button>
-                <button class="claim-gem" id="claimGem" onclick="claimGem()" style="display: none;">Забрать GEM</button>
-                <button class="restart-quiz" id="restartQuiz" onclick="restartQuiz()" style="display: none;">Начать заново</button>
-            </div>
-        </div>
+    <div class="quiz-container">
+        <div class="question" id="question"></div>
+        <div class="answers" id="answers"></div>
+        <button class="next-question" id="nextQuestion" onclick="loadNextQuestion()">Следующий вопрос</button>
+        
+        <button class="restart-quiz" id="restartQuiz" onclick="restartQuiz()" style="display: none;">Начать заново</button>
+    </div>
+</div>
 
 <!-- Страница "О викторине" -->
 <div id="about-page" class="page">
