@@ -192,7 +192,6 @@ body {
     left: 0;
     right: 0;
     z-index: 1000;
-    opacity: 0;
 }
 
 /* Улучшенные кнопки навигации */
@@ -214,7 +213,6 @@ body {
 .nav-button img {
     width: 30px;
     height: 30px;
-    opacity: 1;
 }
 
 .nav-button:hover {
