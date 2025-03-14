@@ -488,3 +488,175 @@ function restartQuiz() {
 // Инициализация
 getTelegramId();
 showPage('quiz'); // По умолчанию показываем страницу викторины
+
+
+// Функция для начала викторины
+function startQuiz() {
+  showPage('quiz'); // Переключаемся на страницу викторины
+  loadQuestion(); // Загружаем первый вопрос
+}
+
+// Функция для начала игры 1vs1 (пока заглушка)
+function startOneVsOne() {
+  alert("Игра 1vs1 в разработке! 🚧");
+  // Здесь будет логика для игры 1vs1
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadProgress();
+  showPage('home'); // Показываем главную страницу по умолчанию
+  getTelegramId();
+});
+
+// Функция для переключения страниц
+function showPage(pageId) {
+  // Скрываем все страницы
+  document.querySelectorAll(".page").forEach(page => page.style.display = "none");
+
+  // Показываем выбранную страницу
+  document.getElementById(`${pageId}-page`).style.display = "block";
+
+  // Убираем активный класс у всех кнопок навигации
+  document.querySelectorAll(".nav-button").forEach(button => button.classList.remove("active"));
+
+  // Добавляем активный класс к текущей кнопке навигации (если есть)
+  const activeButton = document.querySelector(`.nav-button[onclick="showPage('${pageId}')"]`);
+  if (activeButton) activeButton.classList.add("active");
+}
+
+// Функция для обновления профиля
+function updateProfile() {
+  const profileName = document.getElementById("profileName");
+  const profileGemCount = document.getElementById("profileGemCount");
+
+  // Пример имени пользователя (можно заменить на реальное имя из Telegram)
+  profileName.innerText = "Имя пользователя";
+
+  // Обновляем количество GEM
+  profileGemCount.innerText = score; // Используем переменную score из вашего кода
+}
+
+// Вызываем функцию при загрузке страницы
+document.addEventListener("DOMContentLoaded", () => {
+  loadProgress();
+  updateProfile(); // Обновляем профиль
+  showPage('home');
+  getTelegramId();
+});
+
+// Функция для получения ID и имени пользователя из Telegram
+function getTelegramId() {
+  if (window.Telegram && window.Telegram.WebApp) {
+      const user = window.Telegram.WebApp.initDataUnsafe.user;
+      const profileName = document.getElementById("profileName");
+
+      if (user) {
+          // Отображаем имя пользователя
+          profileName.innerText = user.first_name || "Пользователь";
+      }
+  } else {
+      // Если Telegram Web App не доступен, используем заглушку
+      document.getElementById("profileName").innerText = "Пользователь";
+  }
+}
+
+
+// Функция для открытия модального окна профиля
+function openProfileModal() {
+  const modal = document.getElementById("profileModal");
+  modal.style.display = "flex"; // Показываем модальное окно
+
+  // Обновляем данные в модальном окне
+  document.getElementById("modalUserName").innerText = document.getElementById("profileName").innerText;
+  document.getElementById("modalUserId").innerText = document.getElementById("telegramId").innerText;
+  document.getElementById("modalUserGem").innerText = document.getElementById("profileGemCount").innerText;
+}
+
+// Функция для закрытия модального окна профиля
+function closeProfileModal() {
+  const modal = document.getElementById("profileModal");
+  modal.style.display = "none"; // Скрываем модальное окно
+}
+
+// Закрытие модального окна при клике вне его области
+window.onclick = function (event) {
+  const modal = document.getElementById("profileModal");
+  if (event.target === modal) {
+      closeProfileModal();
+  }
+};
+
+
+
+// Функция для получения данных пользователя из Telegram Web App
+function getTelegramUserData() {
+  if (window.Telegram && window.Telegram.WebApp) {
+      const user = window.Telegram.WebApp.initDataUnsafe.user;
+
+      if (user) {
+          // Возвращаем имя и ID пользователя
+          return {
+              id: user.id,
+              firstName: user.first_name,
+              lastName: user.last_name,
+              username: user.username,
+          };
+      }
+  }
+  return null; // Если данные недоступны
+}
+
+
+
+// Функция для обновления профиля
+function updateProfile() {
+  const userData = getTelegramUserData(); // Получаем данные пользователя
+  const profileName = document.getElementById("profileName");
+  const profileGemCount = document.getElementById("profileGemCount");
+  const modalUserName = document.getElementById("modalUserName");
+  const modalUserId = document.getElementById("modalUserId");
+
+  if (userData) {
+      // Если данные пользователя доступны (Telegram Web App)
+      const fullName = userData.firstName + (userData.lastName ? ` ${userData.lastName}` : "");
+      profileName.innerText = fullName; // Отображаем имя на главной странице
+      modalUserName.innerText = fullName; // Отображаем имя в модальном окне
+      modalUserId.innerText = userData.id; // Отображаем ID в модальном окне
+  } else {
+      // Если данные недоступны (например, в браузере)
+      profileName.innerText = "Пользователь";
+      modalUserName.innerText = "Пользователь";
+      modalUserId.innerText = "Не определен";
+  }
+
+  // Обновляем количество GEM
+  profileGemCount.innerText = score; // Используем переменную score из вашего кода
+  document.getElementById("modalUserGem").innerText = score;
+}
+
+// Вызываем функцию при загрузке страницы
+document.addEventListener("DOMContentLoaded", () => {
+  loadProgress();
+  updateProfile(); // Обновляем профиль
+  showPage('home');
+});
+
+
+// Функция для открытия модального окна профиля
+function openProfileModal() {
+  const modal = document.getElementById("profileModal");
+  modal.style.display = "flex"; // Показываем модальное окно
+
+  // Обновляем данные в модальном окне
+  const userData = getTelegramUserData();
+  if (userData) {
+      const fullName = userData.firstName + (userData.lastName ? ` ${userData.lastName}` : "");
+      document.getElementById("modalUserName").innerText = fullName;
+      document.getElementById("modalUserId").innerText = userData.id;
+  } else {
+      document.getElementById("modalUserName").innerText = "Пользователь";
+      document.getElementById("modalUserId").innerText = "Не определен";
+  }
+
+  document.getElementById("modalUserGem").innerText = document.getElementById("profileGemCount").innerText;
+}

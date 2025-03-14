@@ -398,66 +398,66 @@ body {
     background: #160033;
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
-/* Сетка книг */
+/* Сетка для товаров */
 .shop-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 книги в ряд */
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Автоматическое выравнивание */
+    gap: 20px; /* Расстояние между карточками */
+    width: 100%;
+    max-width: 800px; /* Максимальная ширина сетки */
 }
 
-/* Карточка книги */
+/* Карточка товара */
 .book-item {
-    width: 180px;
-    height: 260px;
+    width: 100%; /* Ширина карточки */
+    height: 300px; /* Фиксированная высота карточки */
     position: relative;
     perspective: 1000px;
     cursor: pointer;
+    background: rgba(255, 255, 255, 0.1); /* Полупрозрачный фон */
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Лицевая и задняя стороны */
-.book-front, .book-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
+/* Эффект при наведении на карточку */
+.book-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Лицевая сторона карточки */
+.book-front {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    transition: transform 0.6s;
-    padding: 10px;
-}
-
-/* Лицевая сторона */
-.book-front {
-    transform: rotateY(0deg);
+    justify-content: center;
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    width: 100%;
+    height: 100%;
 }
 
 /* Обложка книги */
 .book-front img {
-    width: 90%;
-    height: 90%;
-    border-radius: 5px;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    width: 80px; /* Размер иконки */
+    height: 80px;
+    margin-bottom: 10px;
 }
 
-/* Футер книги (цена + кнопка) */
-.book-footer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    margin-top: auto;
-    padding-top: 10px;
-    padding-bottom: 10px;
+/* Название книги */
+.book-front h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #fff;
 }
 
 /* Цена */
@@ -465,12 +465,12 @@ body {
     font-size: 14px;
     color: #E7BB4C;
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
 }
 
-/* Кнопка покупки */
+/* Кнопка "Купить" */
 .book-front button {
-    padding: 6px 12px;
+    padding: 8px 16px;
     background-color: #E7BB4C;
     color: #42326C;
     border: none;
@@ -478,42 +478,38 @@ body {
     border-radius: 5px;
     font-size: 14px;
     transition: background-color 0.3s ease;
-    width: 90%;
+    width: 100%;
     max-width: 120px;
-    margin-top: 5px;
 }
 
 .book-front button:hover {
     background-color: #d1a441;
 }
 
-/* Задняя сторона (название и описание) */
+/* Задняя сторона карточки */
 .book-back {
-    transform: rotateY(180deg);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(255, 255, 255, 0.2);
-    text-align: center;
-    font-size: 14px;
-    color: #fff;
     padding: 15px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
+    text-align: center;
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    border-radius: 10px;
 }
 
-/* Название книги на задней стороне */
-.book-back h3 {
-    font-size: 16px;
-    margin-bottom: 5px;
-    color: #E7BB4C;
-}
-
-/* Ограничение текста внутри карточки */
+/* Описание книги */
 .book-back p {
-    max-width: 90%;
-    max-height: 90%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: normal;
+    font-size: 14px;
+    color: #fff;
+    margin: 0;
 }
 
 /* Анимация переворота */
@@ -883,4 +879,265 @@ body {
 #gameEnded p {
     font-size: 20px;
     margin-bottom: 10px;
+}
+
+
+/* Стили для главной страницы */
+#home-page {
+    text-align: center;
+    padding: 20px;
+}
+
+.title {
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 30px;
+    color: #fff;
+}
+
+/* Контейнер для больших кнопок */
+.main-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px; /* Расстояние между кнопками */
+    margin-top: 50px; /* Отступ сверху */
+}
+
+/* Стили для больших кнопок */
+.big-button {
+    width: 80%;
+    max-width: 400px;
+    padding: 20px;
+    font-size: 24px;
+    background-color: #5D3A8E;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.big-button:hover {
+    background-color: #42326C;
+    transform: translateY(-3px);
+}
+
+.big-button:active {
+    transform: translateY(0);
+}
+
+/* Стили для кнопки "Назад" */
+.back-button {
+    position: fixed; /* Фиксированное положение */
+    top: 20px; /* Отступ сверху */
+    left: 20px; /* Отступ слева */
+    background-color: rgba(255, 255, 255, 0.1); /* Полупрозрачный фон */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Полупрозрачная граница */
+    border-radius: 50%; /* Круглая форма */
+    width: 40px; /* Ширина */
+    height: 40px; /* Высота */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(10px); /* Размытие фона */
+    -webkit-backdrop-filter: blur(10px);
+    transition: background-color 0.3s ease, transform 0.2s;
+    z-index: 1000; /* Чтобы кнопка была поверх других элементов */
+}
+
+.back-button img {
+    width: 24px; /* Размер иконки */
+    height: 24px;
+    filter: brightness(0) invert(1); /* Белая иконка */
+}
+
+/* Эффект при наведении */
+.back-button:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* Изменение фона при наведении */
+    transform: scale(1.1); /* Увеличение кнопки */
+}
+
+/* Эффект при нажатии */
+.back-button:active {
+    transform: scale(0.9); /* Уменьшение кнопки */
+}
+
+@media (max-width: 768px) {
+    .shop-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 карточки в ряд на мобильных */
+    }
+
+    .book-item {
+        height: 280px; /* Уменьшаем высоту карточки */
+    }
+
+    .book-front img {
+        width: 60px;
+        height: 60px;
+    }
+
+    .book-front h3 {
+        font-size: 14px;
+    }
+
+    .book-front button {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .shop-grid {
+        grid-template-columns: 1fr; /* 1 карточка в ряд на очень маленьких экранах */
+    }
+}
+
+/* Карточка товара */
+.book-item {
+    width: 100%; /* Ширина карточки */
+    height: 300px; /* Фиксированная высота карточки */
+    position: relative;
+    perspective: 1000px; /* Глубина перспективы для 3D-эффекта */
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.1); /* Полупрозрачный фон */
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Лицевая и задняя стороны карточки */
+.book-front, .book-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden; /* Скрываем обратную сторону */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    border-radius: 10px;
+    transition: transform 0.6s ease; /* Анимация переворота */
+}
+
+/* Лицевая сторона карточки */
+.book-front {
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotateY(0deg); /* Изначально видимая сторона */
+}
+
+/* Задняя сторона карточки */
+.book-back {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotateY(180deg); /* Изначально скрытая сторона */
+}
+
+/* Анимация переворота */
+.book-item.flipped .book-front {
+    transform: rotateY(180deg); /* Переворачиваем лицевую сторону */
+}
+
+.book-item.flipped .book-back {
+    transform: rotateY(0deg); /* Показываем заднюю сторону */
+}
+
+
+
+
+
+/* Стили для профиля на главной странице */
+.profile-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Расстояние между элементами */
+    margin-bottom: 20px; /* Отступ снизу */
+}
+
+.profile-avatar {
+    width: 50px; /* Размер аватарки */
+    height: 50px;
+    border-radius: 50%; /* Круглая форма */
+    border: 2px solid #E7BB4C; /* Рамка */
+    object-fit: cover; /* Чтобы изображение не искажалось */
+}
+
+.profile-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.profile-gem {
+    font-size: 16px;
+    color: #E7BB4C;
+    font-weight: bold;
+}
+
+
+
+
+
+
+/* Стили для модального окна */
+.modal {
+    display: none; /* Скрыто по умолчанию */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Полупрозрачный фон */
+    z-index: 1000; /* Поверх других элементов */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #160033;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    position: relative;
+}
+
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #fff;
+}
+
+.close-modal:hover {
+    color: #E7BB4C;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid #E7BB4C;
+    object-fit: cover;
+}
+
+.profile-details p {
+    font-size: 16px;
+    color: #fff;
+    margin: 5px 0;
 }

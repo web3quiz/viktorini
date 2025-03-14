@@ -15,8 +15,31 @@
             <span class="telegramId">ID: <span id="telegramId">Не определен</span></span>
         </div>
 
-        <!-- Страница викторины -->
-        <div id="quiz-page" class="page active">
+        <!-- Главная страница -->
+<div id="home-page" class="page active">
+    
+
+<!-- Аватарка и имя пользователя -->
+<div class="profile-info">
+    <img src="icons/avatar.svg" alt="Аватар" class="profile-avatar" onclick="openProfileModal()">
+    <span class="profile-name" id="profileName">Имя пользователя</span>
+    <span class="profile-gem">GEM: <span id="profileGemCount">0</span></span>
+</div>
+
+    <h1 class="title">Добро пожаловать!</h1>
+    <div class="main-buttons">
+        <button class="big-button" onclick="startQuiz()">Викторина</button>
+        <button class="big-button" onclick="startOneVsOne()">Игра 1vs1</button>
+    </div>
+</div>
+
+
+
+<!-- Страница викторины -->
+<div id="quiz-page" class="page">
+    <button class="back-button" onclick="showPage('home')">
+        <img src="icons/back.svg" alt="Назад">
+    </button>
             <div class="quiz-container" id="quiz-container">
                 <div class="question" id="question"></div>
                 <div class="answers" id="answers"></div>
@@ -26,9 +49,11 @@
             </div>
         </div>
 
-        <!-- Страница "О викторине" -->
-        <!-- Страница получения дополнительных GEM'ов -->
+<!-- Страница "О викторине" -->
 <div id="about-page" class="page">
+    <button class="back-button" onclick="showPage('home')">
+        <img src="icons/back.svg" alt="Назад">
+    </button>
     <h1>Получите больше GEM💎</h1>
     <p>Выполняйте простые задания и получайте награды!</p>
 
@@ -42,80 +67,75 @@
         <img src="icons/telegram.svg" alt="Telegram"> Подписаться на Telegram
     </button>
 
-
-    <button class="back-button" onclick="showPage('quiz')">
-        <alt="Назад"> Назад к викторине
-    </button>
 </div>
 
 
 
-        <!-- Страница "Профиль" -->
-        <div id="profile-page" class="page">
-            <h1>Профиль</h1>
-            <p><strong>Ваш ID:</strong> <span id="profileTelegramId">Не определен</span></p>
-            <p><strong>Ваши GEM:</strong> <span id="profileGemCount">0</span></p>
-        </div>
 
-        <!-- Страница "Лидеры" -->
-        <div id="leaders-page" class="page">
+
+<!-- Страница "Лидеры" -->
+<div id="leaders-page" class="page">
+    <button class="back-button" onclick="showPage('home')">
+        <img src="icons/back.svg" alt="Назад">
+    </button>
             <h1>Таблица лидеров</h1>
             <ul id="leaderboard">
                 <li>Загрузка...</li>
             </ul>
         </div>
 
-        <!-- Страница "Настройки" -->
-        <!-- Страница магазина -->
+
+<!-- Страница магазина -->
 <div id="shop-page" class="page">
+    <button class="back-button" onclick="showPage('home')">
+        <img src="icons/back.svg" alt="Назад">
+    </button>
     <h1>🛒 Магазин</h1>
     <p>У вас <strong id="gemBalance">0</strong> GEM'ов</p>
 
-<!-- Магазин книг в сетке -->
-<div class="shop-container">
-    <div class="shop-grid">
-        <div class="book-item" onclick="flipBook(this)">
-            <div class="book-front">
-                <img src="icons/book1.svg" alt="Искусство войны">
-                <h3>📖 Искусство войны</h3>
-                <span class="price">15 GEM</span>
-                <button onclick="buyItem(15, 'Искусство войны', event)">Купить</button>
+    <!-- Контейнер для товаров -->
+    <div class="shop-container">
+        <div class="shop-grid">
+            <!-- Товар 1 -->
+            <div class="book-item" onclick="flipBook(this)">
+                <div class="book-front">
+                    <img src="icons/book1.svg" alt="Искусство войны">
+                    <h3>📖 Искусство войны</h3>
+                    <span class="price">15 GEM</span>
+                    <button onclick="buyItem(15, 'Искусство войны', event)">Купить</button>
+                </div>
+                <div class="book-back">
+                    <p>Трактат о стратегии и тактике ведения войны, написанный Сунь-Цзы.</p>
+                </div>
             </div>
-            <div class="book-back">
-                <p>Трактат о стратегии и тактике ведения войны, написанный Сунь-Цзы.</p>
-            </div>
-        </div>
 
-        <div class="book-item" onclick="flipBook(this)">
-            <div class="book-front">
-                <img src="icons/book2.svg" alt="Кто заплачет, когда ты умрешь?">
-                <h3>📖 Кто заплачет, когда ты умрешь?</h3>
-                <span class="price">20 GEM</span>
-                <button onclick="buyItem(20, 'Кто заплачет, когда ты умрешь?', event)">Купить</button>
+            <!-- Товар 2 -->
+            <div class="book-item" onclick="flipBook(this)">
+                <div class="book-front">
+                    <img src="icons/book2.svg" alt="Кто заплачет, когда ты умрешь?">
+                    <h3>📖 Кто заплачет, когда ты умрешь?</h3>
+                    <span class="price">20 GEM</span>
+                    <button onclick="buyItem(20, 'Кто заплачет, когда ты умрешь?', event)">Купить</button>
+                </div>
+                <div class="book-back">
+                    <p>Мотивационная книга Робина Шармы о смысле жизни и саморазвитии.</p>
+                </div>
             </div>
-            <div class="book-back">
-                <p>Мотивационная книга Робина Шармы о смысле жизни и саморазвитии.</p>
-            </div>
-        </div>
 
-        <div class="book-item" onclick="flipBook(this)">
-            <div class="book-front">
-                <img src="icons/book3.svg" alt="Атлант расправил плечи">
-                <h3>📖 Атлант расправил плечи</h3>
-                <span class="price">25 GEM</span>
-                <button onclick="buyItem(25, 'Атлант расправил плечи', event)">Купить</button>
-            </div>
-            <div class="book-back">
-                <p>Философский роман Айн Рэнд о борьбе интеллекта против бюрократии.</p>
+            <!-- Товар 3 -->
+            <div class="book-item" onclick="flipBook(this)">
+                <div class="book-front">
+                    <img src="icons/book3.svg" alt="Атлант расправил плечи">
+                    <h3>📖 Атлант расправил плечи</h3>
+                    <span class="price">25 GEM</span>
+                    <button onclick="buyItem(25, 'Атлант расправил плечи', event)">Купить</button>
+                </div>
+                <div class="book-back">
+                    <p>Философский роман Айн Рэнд о борьбе интеллекта против бюрократии.</p>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-
-    <button class="back-button" onclick="showPage('quiz')">
-        <img src="icons/back.svg" alt="Назад"> Назад к викторине
-    </button>
 </div>
 
 
@@ -134,9 +154,7 @@
             <button class="nav-button" onclick="showPage('leaders')">
                 <img src="icons/leaders.svg" alt="Лидеры">
             </button>
-            <button class="nav-button" onclick="showPage('profile')">
-                <img src="icons/profile.svg" alt="Профиль">
-            </button>
+
             
         </div>
     </div>
@@ -147,5 +165,21 @@
 
     <script src="script.js"></script>
     <script async src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Модальное окно для профиля -->
+<div id="profileModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeProfileModal()">&times;</span>
+        <h2>Профиль</h2>
+        <div class="profile-details">
+            <img src="icons/avatar.svg" alt="Аватар" class="modal-avatar">
+            <p><strong>Имя:</strong> <span id="modalUserName">Имя пользователя</span></p>
+            <p><strong>ID:</strong> <span id="modalUserId">Не определен</span></p>
+            <p><strong>GEM:</strong> <span id="modalUserGem">0</span></p>
+        </div>
+    </div>
+</div>
+
+
 </body>
 </html>
