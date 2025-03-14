@@ -252,17 +252,17 @@ body {
     }
 
     .navigation {
-        height: 20px;
+        height: 30px;
     }
 
     .nav-button {
-        width: 20px;
-        height: 20px;
+        width: 30px;
+        height: 30px;
     }
 
     .nav-button img {
-        width: 20px;
-        height: 20px;
+        width: 30px;
+        height: 30px;
     }
 
     .nav-button:hover img {
