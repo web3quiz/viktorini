@@ -245,7 +245,7 @@ body {
     padding: 10px;
     background-color: #160033;
     position: fixed;
-    bottom: 15px;
+    bottom: 0px;
     left: 0;
     right: 0;
     z-index: 1000;
