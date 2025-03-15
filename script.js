@@ -1008,3 +1008,71 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("Сохранённые результаты:", savedScore);
   }
 });
+
+
+
+
+
+
+
+// Генерация реферальной ссылки
+function generateReferralLink() {
+  const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "defaultUser";
+  const baseUrl = "https://yourgame.github.io/"; // Замените на ваш URL
+  return `${baseUrl}?ref=${userId}`;
+}
+
+// Отображение реферальной ссылки
+function displayReferralLink() {
+  const referralLink = generateReferralLink();
+  document.getElementById("referralLink").value = referralLink;
+}
+
+// Копирование реферальной ссылки
+function copyReferralLink() {
+  const referralLink = document.getElementById("referralLink");
+  referralLink.select();
+  document.execCommand("copy");
+  alert("Ссылка скопирована! Поделитесь ею с друзьями.");
+}
+
+// Получение количества приглашённых друзей
+function getReferralCount() {
+  return parseInt(localStorage.getItem("referralCount")) || 0;
+}
+
+// Обновление количества приглашённых друзей
+function updateReferralCount() {
+  const referralCount = getReferralCount();
+  document.getElementById("referralCount").innerText = referralCount;
+}
+
+// Начисление GEM за приглашённого друга
+function addReferral() {
+  let referralCount = getReferralCount();
+  referralCount += 1;
+  localStorage.setItem("referralCount", referralCount);
+
+  // Начисляем GEM за приглашённого друга
+  score += 5; // Например, 5 GEM за каждого друга
+  updateGemDisplay();
+  updateReferralCount();
+}
+
+// Проверка реферальной ссылки при загрузке страницы
+function checkReferral() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const refUserId = urlParams.get("ref");
+
+  if (refUserId && refUserId !== (window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "defaultUser")) {
+      // Если пользователь перешёл по реферальной ссылке
+      addReferral();
+  }
+}
+
+// Инициализация реферальной системы
+document.addEventListener("DOMContentLoaded", () => {
+  displayReferralLink();
+  updateReferralCount();
+  checkReferral();
+});

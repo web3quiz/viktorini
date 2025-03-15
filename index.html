@@ -51,28 +51,53 @@
     <button class="back-button" onclick="showPage('home')">
         <img src="icons/back.svg" alt="Назад">
     </button>
-    <h1>Получите больше GEM💎</h1>
-    <p>Выполняйте простые задания и получайте награды!</p>
 
-    <!-- Реферальная система -->
-    <div class="referral-section">
-        <h2>Пригласите друзей</h2>
-        <p>Поделитесь своей реферальной ссылкой и получайте GEM за каждого приглашённого друга.</p>
-        <div class="referral-link">
-            <input type="text" id="referralLink" readonly>
-            <button onclick="copyReferralLink()">Копировать</button>
+    <div class="about-container">
+        <h1>О викторине</h1>
+
+        <!-- Описание викторины -->
+        <div class="about-section">
+            <h2>🎯 Что это?</h2>
+            <p>
+                Это увлекательная викторина, где вы можете проверить свои знания и заработать GEM.
+                Отвечайте на вопросы, приглашайте друзей и получайте награды!
+            </p>
         </div>
-        <p class="referral-stats">Приглашено друзей: <span id="referralCount">0</span></p>
-    </div>
 
-    <!-- Другие задания -->
-    <h2>Как получить GEM'ы?</h2>
-    <button class="reward-button" onclick="inviteFriend()">
-        <img src="icons/friend.svg" alt="Пригласить друга"> Пригласить друга
-    </button>
-    <button class="reward-button" onclick="subscribeTelegram()">
-        <img src="icons/telegram.svg" alt="Telegram"> Подписаться на Telegram
-    </button>
+        <!-- Правила -->
+        <div class="about-section">
+            <h2>📜 Правила</h2>
+            <ul>
+                <li>✅ Отвечайте на вопросы и получайте GEM за правильные ответы.</li>
+                <li>🔄 Если ответ неверный, попробуйте ещё раз.</li>
+                <li>🎁 Приглашайте друзей и получайте бонусы.</li>
+            </ul>
+        </div>
+
+        <!-- Реферальная система -->
+        <div class="about-section">
+            <h2>👥 Пригласите друзей</h2>
+            <p>
+                Поделитесь своей реферальной ссылкой и получайте GEM за каждого приглашённого друга.
+            </p>
+            <div class="referral-link">
+                <input type="text" id="referralLink" readonly>
+                <button onclick="copyReferralLink()">Копировать</button>
+            </div>
+            <p class="referral-stats">Приглашено друзей: <span id="referralCount">0</span></p>
+        </div>
+
+        <!-- Задания -->
+        <div class="about-section">
+            <h2>🎁 Получите больше GEM</h2>
+            <button class="reward-button" onclick="inviteFriend()">
+                <img src="icons/friend.svg" alt="Пригласить друга"> Пригласить друга
+            </button>
+            <button class="reward-button" onclick="subscribeTelegram()">
+                <img src="icons/telegram.svg" alt="Telegram"> Подписаться на Telegram
+            </button>
+        </div>
+    </div>
 </div>
 
 

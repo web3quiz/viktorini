@@ -33,6 +33,28 @@ body {
 }
 
 
+/* Контейнер страницы "О викторине" */
+#about-page {
+    height: 100vh; /* Занимаем всю высоту экрана */
+    overflow-y: auto; /* Включаем вертикальную прокрутку */
+    scrollbar-width: none; /* Скрываем scrollbar в Firefox */
+    -ms-overflow-style: none; /* Скрываем scrollbar в IE/Edge */
+}
+
+/* Скрываем scrollbar в Chrome/Safari */
+#about-page::-webkit-scrollbar {
+    display: none;
+}
+
+/* Контейнер содержимого */
+.about-container {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+    padding-bottom: 100px; /* Добавляем отступ снизу для прокрутки */
+}
+
 
 .quiz-container {
     display: flex;
@@ -504,32 +526,7 @@ body {
     transform: scale(1);
 }
 
-/* Прокрутка магазина */
-.shop-container {
-    padding: 20px;
-    background: #160033;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    height: 80vh; /* Ограничение высоты */
-    overflow-y: auto; /* Вертикальная прокрутка */
-    scrollbar-width: thin;
-    scrollbar-color: #5D3A8E #160033;
-}
 
-/* Стилизация прокрутки для Chrome и Safari */
-.shop-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.shop-container::-webkit-scrollbar-track {
-    background: #160033;
-}
-
-.shop-container::-webkit-scrollbar-thumb {
-    background-color: #5D3A8E;
-    border-radius: 10px;
-}
 
 /* Сохранение старого стиля */
 button {
@@ -1158,4 +1155,152 @@ body {
 /* Удаляем стили для кнопки "Забрать GEM" */
 #claimGem {
     display: none;
+}
+
+
+
+
+
+
+
+
+
+
+/* Контейнер страницы "О викторине" */
+.about-container {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* Секции */
+.about-section {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.about-section h2 {
+    font-size: 20px;
+    color: #E7BB4C;
+    margin-bottom: 10px;
+}
+
+.about-section p {
+    font-size: 16px;
+    color: #fff;
+    line-height: 1.5;
+}
+
+.about-section ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    color: #fff;
+}
+
+.about-section ul li {
+    margin-bottom: 10px;
+}
+
+/* Реферальная ссылка */
+.referral-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.referral-link input {
+    width: 60%;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    text-align: center;
+}
+
+.referral-link button {
+    padding: 10px 20px;
+    background-color: #E7BB4C;
+    color: #42326C;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.referral-link button:hover {
+    background-color: #d1a441;
+}
+
+.referral-stats {
+    font-size: 16px;
+    color: #fff;
+    margin-top: 10px;
+}
+
+/* Кнопки заданий */
+.reward-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    background-color: #0082FC;
+    color: #FFF;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 10px 0;
+    width: 100%;
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.reward-button img {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+}
+
+.reward-button:hover {
+    background-color: #0078E9;
+    transform: translateY(-3px);
+}
+
+.reward-button:active {
+    transform: translateY(0);
+}
+
+
+
+
+
+
+/* Контейнер страницы магазина */
+#shop-page {
+    height: 100vh; /* Занимаем всю высоту экрана */
+    overflow-y: auto; /* Включаем вертикальную прокрутку */
+    scrollbar-width: none; /* Скрываем scrollbar в Firefox */
+    -ms-overflow-style: none; /* Скрываем scrollbar в IE/Edge */
+}
+
+/* Скрываем scrollbar в Chrome/Safari */
+#shop-page::-webkit-scrollbar {
+    display: none;
+}
+
+/* Контейнер содержимого магазина */
+.shop-container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    padding-bottom: 100px; /* Добавляем отступ снизу для прокрутки */
 }
