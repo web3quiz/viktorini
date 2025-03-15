@@ -891,7 +891,7 @@ body {
 .back-button {
     position: fixed; /* Фиксированное положение */
     top: 10px; /* Отступ сверху */
-    left: 10px; /* Отступ слева */
+    left: 20px; /* Отступ слева */
     width: 24px; /* Размер кнопки */
     height: 24px;
     background: none; /* Убираем фон */
