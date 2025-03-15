@@ -1304,3 +1304,77 @@ body {
     text-align: center;
     padding-bottom: 100px; /* Добавляем отступ снизу для прокрутки */
 }
+
+
+
+
+/* style.css */
+
+/* Анимация для появления вопроса */
+.question {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.question.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+
+
+
+/* style.css */
+
+/* Анимация для появления кнопок ответов */
+.answers button {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.answers button.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+
+
+/* style.css */
+
+/* Анимация для кнопки "Следующий вопрос" */
+.next-question {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.5s ease, transform 0.3s ease;
+}
+
+.next-question.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+
+
+
+
+/* style.css */
+
+/* Анимация для правильного ответа */
+.correct {
+    background-color: #4CAF50 !important;
+    box-shadow: 0px 4px 10px rgba(76, 175, 80, 0.5) !important;
+    transform: scale(1.05);
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Анимация для неправильного ответа */
+.incorrect {
+    background-color: #D2238F !important;
+    box-shadow: 0px 4px 10px rgba(244, 67, 54, 0.5) !important;
+    transform: scale(0.95);
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
