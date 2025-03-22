@@ -286,8 +286,24 @@ function startQuiz(category) {
 
 // Функция для начала игры 1vs1 (пока заглушка)
 function startOneVsOne() {
-  alert("Игра 1vs1 в разработке! 🚧");
-  // Здесь будет логика для игры 1vs1
+  showPage("one-vs-one"); // Показываем страницу игры 1vs1
+  const status = document.getElementById("status");
+  const socket = new WebSocket("wss://prickly-grey-close.glitch.me"); // Замени на свою ссылку
+
+  socket.onopen = () => {
+      status.innerText = "Поиск соперника...";
+  };
+
+  socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "wait") {
+          status.innerText = data.message;
+      } else if (data.type === "start") {
+          status.innerText = "Игра началась!";
+          startGameLogic(); // Тут начнем вопросы и игру
+      }
+  };
 }
 
 document.addEventListener("DOMContentLoaded", () => {
