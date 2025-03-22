@@ -21,12 +21,25 @@
     </div>
     <h1 class="title">Добро пожаловать!</h1>
     <div class="main-buttons">
-        <button class="big-button" onclick="startQuiz()">Викторина</button>
+        <button class="big-button" onclick="showPage('categories')">Викторина</button> <!-- Изменено на выбор категорий -->
         <button class="big-button" onclick="startOneVsOne()">Игра 1vs1</button>
         <button class="big-button" onclick="enableSound()">Разрешить звук</button>
     </div>
 </div>
 
+<!-- Страница выбора категорий -->
+<div id="categories-page" class="page">
+    <button class="back-button" onclick="showPage('home')">
+        <img src="icons/back.svg" alt="Назад">
+    </button>
+    <h1>Выберите категорию</h1>
+    <div class="categories-container">
+        <button class="category-button" onclick="startQuiz('islam')">Ислам</button>
+        <button class="category-button" onclick="startQuiz('history')">История</button>
+        <button class="category-button" onclick="startQuiz('science')">Наука</button>
+        <button class="category-button" onclick="startQuiz('literature')">Литература</button>
+    </div>
+</div>
 
 
 <!-- Страница викторины -->
@@ -42,6 +55,11 @@
         <button class="restart-quiz" id="restartQuiz" onclick="restartQuiz()" style="display: none;">Начать заново</button>
     </div>
 </div>
+
+
+
+
+
 
 <!-- Страница "О викторине" -->
 <div id="about-page" class="page">

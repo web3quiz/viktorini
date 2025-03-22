@@ -1378,3 +1378,43 @@ body {
     transform: scale(0.95);
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
+
+
+
+
+
+/* Стили для страницы категорий */
+#categories-page {
+    text-align: center;
+    padding: 20px;
+}
+
+.categories-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.category-button {
+    width: 80%;
+    max-width: 400px;
+    padding: 20px;
+    font-size: 24px;
+    background-color: #5D3A8E;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.category-button:hover {
+    background-color: #42326C;
+    transform: translateY(-3px);
+}
+
+.category-button:active {
+    transform: translateY(0);
+}
