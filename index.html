@@ -23,7 +23,6 @@
     <div class="main-buttons">
         <button class="big-button" onclick="showPage('categories')">Викторина</button> <!-- Изменено на выбор категорий -->
         <button class="big-button" onclick="startOneVsOne()">Игра 1vs1</button>
-        <button class="big-button" onclick="enableSound()">Разрешить звук</button>
     </div>
 </div>
 
@@ -34,10 +33,10 @@
     </button>
     <h1>Выберите категорию</h1>
     <div class="categories-container">
-        <button class="category-button" onclick="startQuiz('islam')">Ислам</button>
-        <button class="category-button" onclick="startQuiz('history')">История</button>
-        <button class="category-button" onclick="startQuiz('science')">Наука</button>
-        <button class="category-button" onclick="startQuiz('literature')">Литература</button>
+        <button class="category-button" onclick="startQuiz('quran')">Коран</button>
+        <button class="category-button" onclick="startQuiz('hadisy')">Хадисы</button>
+        <button class="category-button" onclick="startQuiz('history')">История Ислама</button>
+        <button class="category-button" onclick="startQuiz('all')">По всем категориям</button>
     </div>
 </div>
 
@@ -96,24 +95,24 @@
         </div>
 
         <!-- Реферальная система -->
-        <div class="about-section">
+      
+
+        <div class="referral-section">
             <h2>👥 Пригласите друзей</h2>
             <p>
-                Поделитесь своей реферальной ссылкой и получайте GEM за каждого приглашённого друга.
+                Поделитесь своей реферальной ссылкой и получайте бонусы за каждого приглашённого друга.
             </p>
             <div class="referral-link">
                 <input type="text" id="referralLink" readonly>
                 <button onclick="copyReferralLink()">Копировать</button>
             </div>
-            <p class="referral-stats">Приглашено друзей: <span id="referralCount">0</span></p>
+            <p>Ваша реферальная ссылка: <span id="referralLinkDisplay"></span></p>
         </div>
 
         <!-- Задания -->
         <div class="about-section">
             <h2>🎁 Получите больше GEM</h2>
-            <button class="reward-button" onclick="inviteFriend()">
-                <img src="icons/friend.svg" alt="Пригласить друга"> Пригласить друга
-            </button>
+            
             <button class="reward-button" onclick="subscribeTelegram()">
                 <img src="icons/telegram.svg" alt="Telegram"> Подписаться на Telegram
             </button>
@@ -196,24 +195,22 @@
             <button class="nav-button" onclick="showPage('quiz')">
                 <img src="icons/quiz.svg" alt="Викторина">
             </button>
+           
             <button class="nav-button" onclick="showPage('about')">
                 <img src="icons/info.svg" alt="О викторине">
-            </button>
-            
-            <button class="nav-button" onclick="showPage('shop')">
-                <img src="icons/settings.svg" alt="Настройки">
             </button>
             <button class="nav-button" onclick="showPage('leaders')">
                 <img src="icons/leaders.svg" alt="Лидеры">
             </button>
 
+            <button class="nav-button" onclick="showPage('shop')">
+                <img src="icons/settings.svg" alt="Настройки">
+            </button>
+           
             
         </div>
     </div>
 
-    <!-- Аудио для звуковых эффектов -->
-    <audio id="correctSound" src="sounds/correct.mp3"></audio>
-    <audio id="incorrectSound" src="sounds/incorrect.mp3"></audio>
 
     <script src="script.js"></script>
     <script async src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -235,3 +232,4 @@
 
 </body>
 </html>
+
