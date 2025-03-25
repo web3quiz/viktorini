@@ -1596,3 +1596,36 @@ body {
     width: 20px;
     height: 20px;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+body {
+    user-select: none; /* Стандартное свойство */
+    -webkit-user-select: none; /* Для Chrome/Safari */
+    -moz-user-select: none; /* Для Firefox */
+    -ms-user-select: none; /* Для IE/Edge */
+}
+
+/* Разрешаем выделение для полей ввода (если они есть) */
+input, textarea {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+
+
+img {
+    pointer-events: none; /* Запрет перетаскивания */
+    -webkit-touch-callout: none; /* Запрет долгого нажатия на iOS */
+}

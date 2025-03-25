@@ -1184,3 +1184,37 @@ document.addEventListener("DOMContentLoaded", () => {
     updateReferralStats();
     checkReferral();
 });
+
+
+
+
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    alert('Копирование запрещено');
+    return false;
+});
+
+
+
+document.addEventListener('keydown', function(e) {
+    // Блокировка Ctrl+C, Ctrl+V, Ctrl+A
+    if ((e.ctrlKey || e.metaKey) && 
+        (e.keyCode === 67 || e.keyCode === 86 || e.keyCode === 65)) {
+        e.preventDefault();
+        alert('Копирование запрещено');
+        return false;
+    }
+    
+    // Блокировка правой кнопки мыши
+    if (e.keyCode === 93) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+
+
+document.addEventListener('dragstart', function(e) {
+    e.preventDefault();
+    return false;
+});

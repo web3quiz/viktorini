@@ -240,6 +240,51 @@
 </div>
 
 
+
+
+
+
+
+<script>
+    // Блокировка выделения текста
+    document.addEventListener('DOMContentLoaded', function() {
+        // Для дополнительной надежности
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        
+        // Блокировка контекстного меню
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showCopyAlert();
+            return false;
+        });
+        
+        // Блокировка горячих клавиш
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && 
+                (e.key === 'c' || e.key === 'C' || 
+                 e.key === 'v' || e.key === 'V' ||
+                 e.key === 'a' || e.key === 'A' ||
+                 e.key === 'x' || e.key === 'X')) {
+                e.preventDefault();
+                showCopyAlert();
+                return false;
+            }
+        });
+        
+        // Вспомогательная функция
+        function showCopyAlert() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                Telegram.WebApp.showAlert('Копирование материалов запрещено');
+            } else {
+                alert('Копирование материалов запрещено');
+            }
+        }
+    });
+    </script>
+
+
+
 </body>
 </html>
 
