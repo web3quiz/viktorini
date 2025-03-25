@@ -643,12 +643,7 @@ function openProfileModal() {
 
 
 
-// Генерация реферальной ссылки
-function generateReferralLink() {
-  const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "defaultUser";
-  const baseUrl = "https://yourgame.github.io/"; // Замените на ваш URL
-  return `${baseUrl}?ref=${userId}`;
-}
+
 
 // Отображение реферальной ссылки
 function displayReferralLink() {
@@ -708,11 +703,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-function generateReferralLink() {
-  const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "defaultUser";
-  const baseUrl = "https://web3quiz.github.io/viktorini/"; // Замените на ваш URL
-  return `${baseUrl}?ref=${userId}`;
-}
+
 
 // Удаляем или комментируем этот код
 // document.getElementById("telegramId").innerText = telegramId;
@@ -991,12 +982,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 
-// Генерация реферальной ссылки
-function generateReferralLink() {
-  const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "defaultUser";
-  const baseUrl = "https://yourgame.github.io/"; // Замените на ваш URL
-  return `${baseUrl}?ref=${userId}`;
-}
+
 
 // Отображение реферальной ссылки
 function displayReferralLink() {
@@ -1064,9 +1050,38 @@ if (window.Telegram && window.Telegram.WebApp) {
 }
 
 
+
+// Генерация реферальной ссылки
+function generateReferralLink() {
+    if (window.Telegram && window.Telegram.WebApp) {
+        const user = window.Telegram.WebApp.initDataUnsafe.user;
+        if (user) {
+            const userId = user.id;
+            const botUsername = "web3quiz_bot"; // Замените на имя вашего бота
+            return `https://t.me/${botUsername}?start=ref_${userId}`;
+        }
+    }
+    return "https://t.me/web3quiz_bot"; // Стандартная ссылка, если данные Telegram недоступны
+}
+
+// Отображение реферальной ссылки
+function displayReferralLink() {
+    const referralLink = generateReferralLink();
+    document.getElementById("referralLink").value = referralLink;
+    document.getElementById("referralLinkDisplay").textContent = referralLink;
+}
+
+// Копирование реферальной ссылки
 function copyReferralLink() {
     const referralLink = document.getElementById("referralLink");
     referralLink.select();
     document.execCommand("copy");
     alert("Ссылка скопирована! Поделитесь ею с друзьями.");
 }
+
+// Инициализация реферальной системы при загрузке страницы
+document.addEventListener("DOMContentLoaded", () => {
+    displayReferralLink();
+    updateReferralCount();
+    checkReferral();
+});
