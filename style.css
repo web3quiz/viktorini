@@ -1729,11 +1729,11 @@ img {
 }
 
 .blue-card {
-    background: linear-gradient(135deg, #E7BB4C, #E7BB4C);
+    background: linear-gradient(135deg, #D2238F, #5D3A8E);
 }
 
 .purple-card {
-    background: linear-gradient(135deg, #E7BB4C, #E7BB4C);
+    background: linear-gradient(135deg, #D2238F, #5D3A8E);
 }
 
 .action-icon {
@@ -1765,22 +1765,22 @@ img {
 }
 
 .action-btn {
-    background: #42326C;
+    background: #E7BB4C;
     border: none;
     border-radius: 8px;
     padding: 8px 16px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
 }
 
 .blue-card .action-btn {
-    color: #ffffff;
+    color: white;
 }
 
 .purple-card .action-btn {
-    color: #ffffff;
+    color: white;
 }
 
 .action-btn:hover {
