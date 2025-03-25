@@ -97,20 +97,30 @@
         <!-- Реферальная система -->
       
 
-        <div class="referral-section">
-            <h2>👥 Пригласите друзей</h2>
-            <p>
-                Поделитесь своей реферальной ссылкой и получайте бонусы за каждого приглашённого друга.
-            </p>
-            <div class="referral-link">
-                <input type="text" id="referralLink" readonly>
-                <button onclick="copyReferralLink()">Копировать</button>
-            </div>
-            <p>Ваша реферальная ссылка: <span id="referralLinkDisplay"></span></p>
+      <div class="referral-section">
+    <h2>🎁 Пригласите друзей и получите бонусы</h2>
+    <p class="bonus-info">
+        За каждого приглашенного друга вы получаете <strong>5 GEM</strong>
+    </p>
+    
+    <button class="reward-button" onclick="shareReferralLink()">
+        <img src="icons/share.svg" alt="Поделиться"> Пригласить друзей
+    </button>
+    
+    <div class="referral-stats">
+        <div class="stat-item">
+            <span class="stat-value" id="referralCount">0</span>
+            <span class="stat-label">приглашенных</span>
         </div>
+        <div class="stat-item">
+            <span class="stat-value" id="referralBonus">0</span>
+            <span class="stat-label">GEM заработано</span>
+        </div>
+    </div>
+</div>
 
         <!-- Задания -->
-        <div class="about-section">
+        <div class="referral-section">
             <h2>🎁 Получите больше GEM</h2>
             
             <button class="reward-button" onclick="subscribeTelegram()">

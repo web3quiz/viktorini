@@ -1085,3 +1085,102 @@ document.addEventListener("DOMContentLoaded", () => {
     updateReferralCount();
     checkReferral();
 });
+
+
+// Функция для поделиться ссылкой через Telegram
+function shareReferralLink() {
+    const referralLink = generateReferralLink();
+    const message = `Ассаляму алейкум! Присоединяйтесь к викторине! ${referralLink}`;
+    
+    // Если в Telegram WebApp
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent("Ассаляму алейкум! Присоединяйтесь к викторине!")}`);
+    } 
+    // Если в браузере
+    else {
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent("Ассаляму алейкум! Присоединяйтесь к викторине")}`, '_blank');
+    }
+}
+
+// Получение количества приглашённых друзей
+function getReferralCount() {
+    return parseInt(localStorage.getItem("referralCount")) || 0;
+}
+
+// Обновление количества приглашённых друзей
+function updateReferralCount() {
+    const referralCount = getReferralCount();Ы
+    document.getElementById("referralCount").innerText = referralCount;
+}
+
+// Проверка реферальной ссылки при загрузке страницы
+function checkReferral() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refUserId = urlParams.get("ref");
+
+    if (refUserId) {
+        // Если это не текущий пользователь
+        const currentUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "0";
+        if (refUserId !== currentUserId) {
+            addReferral();
+        }
+    }
+}
+
+// Добавление реферала
+function addReferral() {
+    let referralCount = getReferralCount();
+    referralCount += 1;
+    localStorage.setItem("referralCount", referralCount.toString());
+    updateReferralCount();
+    
+    // Начисляем бонус
+    score += 5; // 5 GEM за каждого друга
+    updateGemDisplay();
+}
+
+// Инициализация при загрузке
+document.addEventListener("DOMContentLoaded", () => {
+    updateReferralCount();
+    checkReferral();
+});
+
+
+
+// Обновление реферальной статистики
+function updateReferralStats() {
+    const referralCount = getReferralCount();
+    document.getElementById("referralCount").innerText = referralCount;
+    document.getElementById("referralBonus").innerText = referralCount * 5;
+}
+
+// Модифицируйте функцию addReferral
+function addReferral() {
+    let referralCount = getReferralCount();
+    referralCount += 1;
+    localStorage.setItem("referralCount", referralCount.toString());
+    
+    score += 5;
+    updateGemDisplay();
+    updateReferralStats();
+    
+    // Анимация
+    animateStatUpdate();
+}
+
+// Анимация обновления статистики
+function animateStatUpdate() {
+    const stats = document.querySelectorAll(".stat-value");
+    stats.forEach(stat => {
+        stat.classList.add("updated");
+        setTimeout(() => {
+            stat.classList.remove("updated");
+        }, 300);
+    });
+}
+
+// Добавьте в DOMContentLoaded
+document.addEventListener("DOMContentLoaded", () => {
+    updateReferralStats();
+    checkReferral();
+});
