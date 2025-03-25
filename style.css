@@ -1729,11 +1729,11 @@ img {
 }
 
 .blue-card {
-    background: linear-gradient(135deg, #0088cc, #006699);
+    background: linear-gradient(135deg, #E7BB4C, #E7BB4C);
 }
 
 .purple-card {
-    background: linear-gradient(135deg, #6e45e2, #4124b4);
+    background: linear-gradient(135deg, #E7BB4C, #E7BB4C);
 }
 
 .action-icon {
@@ -1765,7 +1765,7 @@ img {
 }
 
 .action-btn {
-    background: white;
+    background: #42326C;
     border: none;
     border-radius: 8px;
     padding: 8px 16px;
@@ -1776,11 +1776,11 @@ img {
 }
 
 .blue-card .action-btn {
-    color: #006699;
+    color: #ffffff;
 }
 
 .purple-card .action-btn {
-    color: #6e45e2;
+    color: #ffffff;
 }
 
 .action-btn:hover {
