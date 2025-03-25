@@ -75,57 +75,64 @@
     <div class="about-container">
         <h1>О викторине</h1>
 
-        <!-- Описание викторины -->
-        <div class="about-section">
-            <h2>🎯 Что это?</h2>
-            <p>
-                Это увлекательная викторина, где вы можете проверить свои знания и заработать GEM.
-                Отвечайте на вопросы, приглашайте друзей и получайте награды!
-            </p>
-        </div>
+        <!-- Основной контент -->
+        <div class="about-content">
+            <!-- Секция описания -->
+            <div class="about-card">
+                <div class="card-icon">🎯</div>
+                <h2>Что это?</h2>
+                <p>Увлекательная викторина для проверки знаний и заработка GEM. Отвечайте на вопросы, приглашайте друзей и получайте награды!</p>
+            </div>
 
-        <!-- Правила -->
-        <div class="about-section">
-            <h2>📜 Правила</h2>
-            <ul>
-                <li>✅ Отвечайте на вопросы и получайте GEM за правильные ответы.</li>
-                <li>🔄 Если ответ неверный, попробуйте ещё раз.</li>
-                <li>🎁 Приглашайте друзей и получайте бонусы.</li>
-            </ul>
-        </div>
+            <!-- Секция правил -->
+            <div class="about-card">
+                <div class="card-icon">📜</div>
+                <h2>Правила</h2>
+                <ul>
+                    <li>✅ +1 GEM за правильный ответ</li>
+                    <li>🔄 Без штрафов за ошибки</li>
+                    <li>🎁 Бонусы за приглашения</li>
+                </ul>
+            </div>
 
-        <!-- Реферальная система -->
-      
+            <!-- Блок действий -->
+            <div class="action-cards">
+                <!-- Карточка приглашения -->
+                <div class="action-card blue-card">
+                    <div class="action-icon">👥</div>
+                    <div class="action-text">
+                        <h3>Пригласите друзей</h3>
+                        <p>Получите 5 GEM за каждого</p>
+                    </div>
+                    <button class="action-btn" onclick="shareReferralLink()">
+                        Пригласить
+                    </button>
+                </div>
 
-      <div class="referral-section">
-    <h2>🎁 Пригласите друзей и получите бонусы</h2>
-    <p class="bonus-info">
-        За каждого приглашенного друга вы получаете <strong>5 GEM</strong>
-    </p>
-    
-    <button class="reward-button" onclick="shareReferralLink()">
-        <img src="icons/share.svg" alt="Поделиться"> Пригласить друзей
-    </button>
-    
-    <div class="referral-stats">
-        <div class="stat-item">
-            <span class="stat-value" id="referralCount">0</span>
-            <span class="stat-label">приглашенных</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-value" id="referralBonus">0</span>
-            <span class="stat-label">GEM заработано</span>
-        </div>
-    </div>
-</div>
+                <!-- Карточка подписки -->
+                <div class="action-card purple-card">
+                    <div class="action-icon">📢</div>
+                    <div class="action-text">
+                        <h3>Подпишитесь на Telegram</h3>
+                        <p>Получите 10 GEM сразу</p>
+                    </div>
+                    <button class="action-btn" onclick="subscribeTelegram()">
+                        Подписаться
+                    </button>
+                </div>
+            </div>
 
-        <!-- Задания -->
-        <div class="referral-section">
-            <h2>🎁 Получите больше GEM</h2>
-            
-            <button class="reward-button" onclick="subscribeTelegram()">
-                <img src="icons/telegram.svg" alt="Telegram"> Подписаться на Telegram
-            </button>
+            <!-- Статистика -->
+            <div class="stats-container">
+                <div class="stat-box">
+                    <span class="stat-number" id="referralCount">0</span>
+                    <span class="stat-label">друзей приглашено</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="referralBonus">0</span>
+                    <span class="stat-label">GEM заработано</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
