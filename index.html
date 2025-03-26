@@ -9,289 +9,193 @@
 </head>
 <body>
     <div class="container">
-      
-
-
-<!-- Главная страница -->
-<div id="home-page" class="page active">
-    <div class="profile-info">
-        <img src="icons/avatar.svg" alt="Аватар" class="profile-avatar" onclick="openProfileModal()">
-        <span class="profile-name" id="profileName">Имя пользователя</span>
-        <span class="profile-gem">GEM: <span id="profileGemCount">0</span></span>
-    </div>
-    <h1 class="title">Добро пожаловать!</h1>
-    <div class="main-buttons">
-        <button class="big-button" onclick="showPage('categories')">Викторина</button> <!-- Изменено на выбор категорий -->
-        <button class="big-button" onclick="startOneVsOne()">Игра 1vs1</button>
-    </div>
-</div>
-
-<!-- Страница выбора категорий -->
-<div id="categories-page" class="page">
-    <button class="back-button" onclick="showPage('home')">
-        <img src="icons/back.svg" alt="Назад">
-    </button>
-    <h1>Выберите категорию</h1>
-    <div class="categories-container">
-        <button class="category-button" onclick="startQuiz('quran')">Коран</button>
-        <button class="category-button" onclick="startQuiz('hadisy')">Хадисы</button>
-        <button class="category-button" onclick="startQuiz('history')">История Ислама</button>
-        <button class="category-button" onclick="startQuiz('all')">По всем категориям</button>
-    </div>
-</div>
-
-<div id="one-vs-one-page" class="page">
-    <h1>Игра 1 vs 1</h1>
-    <p id="status">Ожидание соперника...</p>
-</div>
-
-
-
-<!-- Страница викторины -->
-<div id="quiz-page" class="page">
-    <button class="back-button" onclick="showPage('home')">
-        <img src="icons/back.svg" alt="Назад">
-    </button>
-    <div class="quiz-container">
-        <div class="question" id="question"></div>
-        <div class="answers" id="answers"></div>
-        <button class="next-question" id="nextQuestion" onclick="loadNextQuestion()">Следующий вопрос</button>
-        
-        <button class="restart-quiz" id="restartQuiz" onclick="restartQuiz()" style="display: none;">Начать заново</button>
-    </div>
-</div>
-
-
-
-
-
-
-<!-- Страница "О викторине" -->
-<div id="about-page" class="page">
-    <button class="back-button" onclick="showPage('home')">
-        <img src="icons/back.svg" alt="Назад">
-    </button>
-
-    <div class="about-container">
-        <h1>О викторине</h1>
-
-        <!-- Основной контент -->
-        <div class="about-content">
-            <!-- Секция описания -->
-            <div class="about-card">
-                <div class="card-icon">🎯</div>
-                <h2>Что это?</h2>
-                <p>Увлекательная викторина для проверки знаний и заработка GEM. Отвечайте на вопросы, приглашайте друзей и получайте награды!</p>
+        <!-- Главная страница -->
+        <div id="home-page" class="page active">
+            <div class="profile-info">
+                <img src="icons/avatar.svg" alt="Аватар" class="profile-avatar" onclick="openProfileModal()">
+                <span class="profile-name" id="profileName">Имя пользователя</span>
+                <span class="profile-gem">GEM: <span id="profileGemCount">0</span></span>
             </div>
-
-            <!-- Секция правил -->
-            <div class="about-card">
-                <div class="card-icon">📜</div>
-                <h2>Правила</h2>
-                <ul>
-                    <li>✅ +1 GEM за правильный ответ</li>
-                    <li>🔄 Без штрафов за ошибки</li>
-                    <li>🎁 Бонусы за приглашения</li>
-                </ul>
+            <h1 class="title">Добро пожаловать!</h1>
+            <div class="main-buttons">
+                <button class="big-button" onclick="showPage('categories')">Викторина</button>
+                <button class="big-button" onclick="startOneVsOne()">Игра 1vs1</button>
             </div>
+        </div>
 
-            <!-- Блок действий -->
-            <div class="action-cards">
-                <!-- Карточка приглашения -->
-                <div class="action-card blue-card">
-                    
-                    <div class="action-text">
-                        <h3>Пригласите друзей</h3>
-                        <p>Получите 5 GEM за каждого</p>
+        <!-- Страница выбора категорий -->
+        <div id="categories-page" class="page">
+            <button class="back-button" onclick="showPage('home')">
+                <img src="icons/back.svg" alt="Назад">
+            </button>
+            <h1>Выберите категорию</h1>
+            <div class="categories-container">
+                <button class="category-button" onclick="startQuiz('quran')">Коран</button>
+                <button class="category-button" onclick="startQuiz('hadisy')">Хадисы</button>
+                <button class="category-button" onclick="startQuiz('history')">История Ислама</button>
+                <button class="category-button" onclick="startQuiz('all')">По всем категориям</button>
+            </div>
+        </div>
+
+        <div id="one-vs-one-page" class="page">
+            <h1>Игра 1 vs 1</h1>
+            <p id="status">Ожидание соперника...</p>
+        </div>
+
+        <!-- Страница викторины -->
+        <div id="quiz-page" class="page">
+            <button class="back-button" onclick="showPage('home')">
+                <img src="icons/back.svg" alt="Назад">
+            </button>
+            <div class="quiz-container">
+                <div class="question" id="question"></div>
+                <div class="answers" id="answers"></div>
+                <button class="next-question" id="nextQuestion" onclick="loadNextQuestion()">Следующий вопрос</button>
+                <button class="restart-quiz" id="restartQuiz" onclick="restartQuiz()" style="display: none;">Начать заново</button>
+            </div>
+        </div>
+
+        <!-- Страница "О викторине" -->
+        <div id="about-page" class="page">
+            <button class="back-button" onclick="showPage('home')">
+                <img src="icons/back.svg" alt="Назад">
+            </button>
+            <div class="about-container">
+                <h1>О викторине</h1>
+                <div class="about-content">
+                    <div class="about-card">
+                        <div class="card-icon">🎯</div>
+                        <h2>Что это?</h2>
+                        <p>Увлекательная викторина для проверки знаний и заработка GEM. Отвечайте на вопросы, приглашайте друзей и получайте награды!</p>
                     </div>
-                    <button class="action-btn" onclick="shareReferralLink()">
-                        Пригласить
-                    </button>
-                </div>
-
-                <!-- Карточка подписки -->
-                <div class="action-card purple-card">
-                    
-                    <div class="action-text">
-                        <h3>Подпишитесь на Telegram</h3>
-                        <p>Получите 10 GEM сразу</p>
+                    <div class="about-card">
+                        <div class="card-icon">📜</div>
+                        <h2>Правила</h2>
+                        <ul>
+                            <li>✅ +1 GEM за правильный ответ</li>
+                            <li>🔄 Без штрафов за ошибки</li>
+                            <li>🎁 Бонусы за приглашения</li>
+                        </ul>
                     </div>
-                    <button class="action-btn" onclick="subscribeTelegram()">
-                        Подписаться
-                    </button>
-                </div>
-            </div>
-
-            <!-- Статистика -->
-            <div class="stats-container">
-                <div class="stat-box">
-                    <span class="stat-number" id="referralCount">0</span>
-                    <span class="stat-label">друзей приглашено</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-number" id="referralBonus">0</span>
-                    <span class="stat-label">GEM заработано</span>
+                    <div class="action-cards">
+                        <div class="action-card blue-card">
+                            <div class="action-text">
+                                <h3>Пригласите друзей</h3>
+                                <p>Получите 5 GEM за каждого</p>
+                            </div>
+                            <button class="action-btn" onclick="shareReferralLink()">Пригласить</button>
+                        </div>
+                        <div class="action-card purple-card">
+                            <div class="action-text">
+                                <h3>Подпишитесь на Telegram</h3>
+                                <p>Получите 10 GEM сразу</p>
+                            </div>
+                            <button class="action-btn" onclick="subscribeTelegram()">Подписаться</button>
+                        </div>
+                    </div>
+                    <div class="stats-container">
+                        <div class="stat-box">
+                            <span class="stat-number" id="referralCount">0</span>
+                            <span class="stat-label">друзей приглашено</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-number" id="referralBonus">0</span>
+                            <span class="stat-label">GEM заработано</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-
-
-
-
-<!-- Страница "Лидеры" -->
-<div id="leaders-page" class="page">
-    <button class="back-button" onclick="showPage('home')">
-        <img src="icons/back.svg" alt="Назад">
-    </button>
+        <!-- Страница "Лидеры" -->
+        <div id="leaders-page" class="page">
+            <button class="back-button" onclick="showPage('home')">
+                <img src="icons/back.svg" alt="Назад">
+            </button>
             <h1>Таблица лидеров</h1>
             <ul id="leaderboard">
                 <li>Загрузка...</li>
             </ul>
         </div>
 
-
-<!-- Страница магазина -->
-<div id="shop-page" class="page">
-    <button class="back-button" onclick="showPage('home')">
-        <img src="icons/back.svg" alt="Назад">
-    </button>
-    <h1>Магазин</h1>
-    <p>У вас <strong id="gemBalance">0</strong> GEM'ов</p>
-
-    <!-- Контейнер для товаров -->
-    <div class="shop-container">
-        <div class="shop-grid">
-            <!-- Товар 1 -->
-            <div class="book-item" onclick="flipBook(this)">
-                <div class="book-front">
-                    <img src="icons/book1.svg" alt="Искусство войны">
-                    <h3>📖 Искусство войны</h3>
-                    <span class="price">15 GEM</span>
-                    <button onclick="buyItem(15, 'Искусство войны', event)">Купить</button>
-                </div>
-                <div class="book-back">
-                    <p>Трактат о стратегии и тактике ведения войны, написанный Сунь-Цзы.</p>
-                </div>
-            </div>
-
-            <!-- Товар 2 -->
-            <div class="book-item" onclick="flipBook(this)">
-                <div class="book-front">
-                    <img src="icons/book2.svg" alt="Кто заплачет, когда ты умрешь?">
-                    <h3>📖 Кто заплачет, когда ты умрешь?</h3>
-                    <span class="price">20 GEM</span>
-                    <button onclick="buyItem(20, 'Кто заплачет, когда ты умрешь?', event)">Купить</button>
-                </div>
-                <div class="book-back">
-                    <p>Мотивационная книга Робина Шармы о смысле жизни и саморазвитии.</p>
-                </div>
-            </div>
-
-            <!-- Товар 3 -->
-            <div class="book-item" onclick="flipBook(this)">
-                <div class="book-front">
-                    <img src="icons/book3.svg" alt="Атлант расправил плечи">
-                    <h3>📖 Атлант расправил плечи</h3>
-                    <span class="price">25 GEM</span>
-                    <button onclick="buyItem(25, 'Атлант расправил плечи', event)">Купить</button>
-                </div>
-                <div class="book-back">
-                    <p>Философский роман Айн Рэнд о борьбе интеллекта против бюрократии.</p>
+        <!-- Страница магазина -->
+        <div id="shop-page" class="page">
+            <button class="back-button" onclick="showPage('home')">
+                <img src="icons/back.svg" alt="Назад">
+            </button>
+            <h1>Магазин</h1>
+            <p>У вас <strong id="gemBalance">0</strong> GEM'ов</p>
+            <div class="shop-container">
+                <div class="shop-grid">
+                    <div class="book-item" onclick="flipBook(this)">
+                        <div class="book-front">
+                            <img src="icons/book1.svg" alt="Искусство войны">
+                            <h3>📖 Искусство войны</h3>
+                            <span class="price">15 GEM</span>
+                            <button onclick="buyItem(15, 'Искусство войны', event)">Купить</button>
+                        </div>
+                        <div class="book-back">
+                            <p>Трактат о стратегии и тактике ведения войны, написанный Сунь-Цзы.</p>
+                        </div>
+                    </div>
+                    <div class="book-item" onclick="flipBook(this)">
+                        <div class="book-front">
+                            <img src="icons/book2.svg" alt="Кто заплачет, когда ты умрешь?">
+                            <h3>📖 Кто заплачет, когда ты умрешь?</h3>
+                            <span class="price">20 GEM</span>
+                            <button onclick="buyItem(20, 'Кто заплачет, когда ты умрешь?', event)">Купить</button>
+                        </div>
+                        <div class="book-back">
+                            <p>Мотивационная книга Робина Шармы о смысле жизни и саморазвитии.</p>
+                        </div>
+                    </div>
+                    <div class="book-item" onclick="flipBook(this)">
+                        <div class="book-front">
+                            <img src="icons/book3.svg" alt="Атлант расправил плечи">
+                            <h3>📖 Атлант расправил плечи</h3>
+                            <span class="price">25 GEM</span>
+                            <button onclick="buyItem(25, 'Атлант расправил плечи', event)">Купить</button>
+                        </div>
+                        <div class="book-back">
+                            <p>Философский роман Айн Рэнд о борьбе интеллекта против бюрократии.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
 
         <!-- Кнопки навигации -->
         <div class="navigation">
             <button class="nav-button" onclick="showPage('quiz')">
                 <img src="icons/quiz.svg" alt="Викторина">
             </button>
-           
             <button class="nav-button" onclick="showPage('about')">
                 <img src="icons/info.svg" alt="О викторине">
             </button>
             <button class="nav-button" onclick="showPage('leaders')">
                 <img src="icons/leaders.svg" alt="Лидеры">
             </button>
-
             <button class="nav-button" onclick="showPage('shop')">
                 <img src="icons/settings.svg" alt="Настройки">
             </button>
-           
-            
         </div>
     </div>
 
+    <!-- Модальное окно для профиля -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeProfileModal()">&times;</span>
+            <h2>Профиль</h2>
+            <div class="profile-details">
+                <img src="icons/avatar.svg" alt="Аватар" class="modal-avatar">
+                <p><strong>Имя:</strong> <span id="modalUserName">Имя пользователя</span></p>
+                <p><strong>ID:</strong> <span id="modalUserId">Не определен</span></p>
+                <p><strong>GEM:</strong> <span id="modalUserGem">0</span></p>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
     <script async src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <!-- Модальное окно для профиля -->
-<div id="profileModal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal" onclick="closeProfileModal()">&times;</span>
-        <h2>Профиль</h2>
-        <div class="profile-details">
-            <img src="icons/avatar.svg" alt="Аватар" class="modal-avatar">
-            <p><strong>Имя:</strong> <span id="modalUserName">Имя пользователя</span></p>
-            <p><strong>ID:</strong> <span id="modalUserId">Не определен</span></p>
-            <p><strong>GEM:</strong> <span id="modalUserGem">0</span></p>
-        </div>
-    </div>
-</div>
-
-
-
-
-
-
-
-<script>
-    // Блокировка выделения текста
-    document.addEventListener('DOMContentLoaded', function() {
-        // Для дополнительной надежности
-        document.body.style.userSelect = 'none';
-        document.body.style.webkitUserSelect = 'none';
-        
-        // Блокировка контекстного меню
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            showCopyAlert();
-            return false;
-        });
-        
-        // Блокировка горячих клавиш
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && 
-                (e.key === 'c' || e.key === 'C' || 
-                 e.key === 'v' || e.key === 'V' ||
-                 e.key === 'a' || e.key === 'A' ||
-                 e.key === 'x' || e.key === 'X')) {
-                e.preventDefault();
-                showCopyAlert();
-                return false;
-            }
-        });
-        
-        // Вспомогательная функция
-        function showCopyAlert() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                Telegram.WebApp.showAlert('Копирование материалов запрещено');
-            } else {
-                alert('Копирование материалов запрещено');
-            }
-        }
-    });
-    </script>
-
-
-
 </body>
 </html>
-
