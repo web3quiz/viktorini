@@ -256,3 +256,68 @@ document.addEventListener('keydown', function(e) {
         return false;
     }
 });
+
+
+
+// Функция для добавления/обновления пользователя
+function addUserToFirebase(user) {
+    const userId = user.uid; // ID из авторизации Firebase
+    const userName = user.displayName || "Аноним";
+  
+    db.collection("users").doc(userId).set({
+      name: userName,
+      gems: 0, // Начальное количество GEM
+      referralCount: 0,
+      createdAt: new Date()
+    }, { merge: true }); // merge: true обновляет только указанные поля
+  }
+  
+  // Пример вызова (после авторизации пользователя):
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+      addUserToFirebase(user);
+    }
+  });
+
+
+
+  // Конфигурация Firebase (замените на свою!)
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6quHrp9tQbLwjUWrupw1C4ljQfPk3uNA",
+    authDomain: "myquizapp-786ee.firebaseapp.com",
+    databaseURL: "https://myquizapp-786ee-default-rtdb.firebaseio.com",
+    projectId: "myquizapp-786ee",
+    storageBucket: "myquizapp-786ee.firebasestorage.app",
+    messagingSenderId: "351619904262",
+    appId: "1:351619904262:web:67133361608fb0e22ce487"
+  };
+  
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  
+  // Основные переменные
+  let currentQuestionIndex = 0;
+  let score = 0;
+  
+  // Загрузка вопросов
+  async function loadQuestions(category) {
+    const snapshot = await db.collection("questions")
+      .where("category", "==", category)
+      .get();
+    
+    return snapshot.docs.map(doc => doc.data());
+  }
+  
+  // Сохранение результата
+  async function saveScore(userId, score) {
+    await db.collection("users").doc(userId).set({
+      lastScore: score,
+      lastPlayed: new Date()
+    }, { merge: true });
+  }
+  
+  // Инициализация при загрузке страницы
+  document.addEventListener("DOMContentLoaded", async () => {
+    // Ваш существующий код инициализации
+  });
