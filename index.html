@@ -6,6 +6,11 @@
     <title>Викторина</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Добавляем Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
 </head>
 <body>
     <div class="container">
@@ -228,10 +233,6 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
-    <script src="script.js"></script>
-    <script async src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <!-- Модальное окно для профиля -->
 <div id="profileModal" class="modal">
@@ -291,8 +292,29 @@
     });
     </script>
 
+<script>
+    // Инициализация Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyC6quHrp9tQbLwjUWrupw1C4ljQfPk3uNA",
+    authDomain: "myquizapp-786ee.firebaseapp.com",
+    databaseURL: "https://myquizapp-786ee-default-rtdb.firebaseio.com",
+    projectId: "myquizapp-786ee",
+    storageBucket: "myquizapp-786ee.firebasestorage.app",
+    messagingSenderId: "351619904262",
+    appId: "1:351619904262:web:67133361608fb0e22ce487"
+  };
+    // Инициализируем Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+</script>
 
-
+<script src="script.js"></script>
+<script async src="https://telegram.org/js/telegram-web-app.js"></script>
 </body>
 </html>
+
+
+
+
 
