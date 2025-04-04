@@ -1076,3 +1076,78 @@ document.addEventListener("DOMContentLoaded", async () => {
     showPage('home');
   }
 });
+
+
+
+// Улучшенная функция загрузки вопросов
+async function loadQuestionsFromFirebase() {
+  try {
+    const database = firebase.database();
+    const snapshot = await database.ref('questions').once('value');
+    const questions = snapshot.val();
+    
+    if (!questions) {
+      console.log("Вопросы не найдены в Firebase, используем временные");
+      return temporaryQuestions;
+    }
+    
+    // Проверяем структуру данных
+    const requiredCategories = ['quran', 'hadisy', 'history', 'all'];
+    for (const category of requiredCategories) {
+      if (!questions[category]) {
+        console.log(`Категория ${category} не найдена, используем временные вопросы`);
+        questions[category] = temporaryQuestions[category] || [];
+      }
+    }
+    
+    return questions;
+  } catch (error) {
+    console.error("Ошибка загрузки вопросов:", error);
+    return temporaryQuestions;
+  }
+}
+
+// Функция сохранения результата
+async function saveQuizResult(userId, score) {
+  try {
+    const database = firebase.database();
+    await database.ref(`users/${userId}/score`).set(score);
+    console.log("Результат сохранен в Firebase");
+  } catch (error) {
+    console.error("Ошибка сохранения результата:", error);
+  }
+}
+
+
+
+async function checkFirebaseConnection() {
+  try {
+    const database = firebase.database();
+    const connectedRef = database.ref(".info/connected");
+    
+    connectedRef.on("value", function(snap) {
+      if (snap.val() === true) {
+        console.log("Подключено к Firebase");
+      } else {
+        console.log("Нет подключения к Firebase");
+      }
+    });
+    
+    // Проверяем доступность базы данных
+    await database.ref(".info/serverTimeOffset").once('value');
+    return true;
+  } catch (error) {
+    console.error("Ошибка подключения к Firebase:", error);
+    return false;
+  }
+}
+
+
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const isConnected = await checkFirebaseConnection();
+  if (!isConnected) {
+    alert("Нет подключения к серверу. Используем локальные данные.");
+  }
+  // Остальная инициализация...
+});
