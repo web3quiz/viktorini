@@ -1,4 +1,4 @@
-// Конфигурация Firebase
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyC6quHrp9tQbLwjUWrupw1C4ljQfPk3uNA",
   authDomain: "myquizapp-786ee.firebaseapp.com",
@@ -9,7 +9,12 @@ const firebaseConfig = {
   appId: "1:351619904262:web:67133361608fb0e22ce487"
 };
 
-// Основные переменные
+// Initialize Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+// App variables
 let currentQuestionIndex = 0;
 let score = parseInt(localStorage.getItem("quizScore")) || 0;
 let shuffledQuestions = [];
@@ -23,7 +28,7 @@ let questionsByCategory = {
   all: []
 };
 
-// Временные вопросы (если Firebase недоступен)
+// Temporary questions
 const temporaryQuestions = {
   quran: [
     {
@@ -35,22 +40,12 @@ const temporaryQuestions = {
       question: "Какая сура называется 'Сердцем Корана'?",
       answers: ["Аль-Бакара", "Ясин", "Аль-Фатиха", "Аль-Ихлас"],
       correctAnswer: 1
-    },
-    {
-      question: "Сколько джузов в Коране?",
-      answers: ["20", "30", "40", "50"],
-      correctAnswer: 1
     }
   ],
   hadisy: [
     {
       question: "Что Пророк (ﷺ) назвал 'главой дел'?",
       answers: ["Намаз", "Пост", "Намерение", "Закят"],
-      correctAnswer: 2
-    },
-    {
-      question: "Кто будет тенью Аллаха в Судный день?",
-      answers: ["Ученый", "Имам", "Правитель", "Милостивый"],
       correctAnswer: 2
     }
   ],
@@ -59,24 +54,14 @@ const temporaryQuestions = {
       question: "Кто был первым халифом после Пророка (ﷺ)?",
       answers: ["Умар ибн аль-Хаттаб", "Абу Бакр ас-Сиддик", "Усман ибн Аффан", "Али ибн Абу Талиб"],
       correctAnswer: 1
-    },
-    {
-      question: "В каком году произошла Хиджра?",
-      answers: ["610 г.", "622 г.", "630 г.", "632 г."],
-      correctAnswer: 1
     }
   ]
 };
 temporaryQuestions.all = [...temporaryQuestions.quran, ...temporaryQuestions.hadisy, ...temporaryQuestions.history];
 
-// Инициализация при загрузке
+// Initialize app
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    // Инициализация Firebase
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    
     initTelegramWebApp();
     await loadQuestionsFromFirebase();
     await initUserData();
@@ -85,184 +70,117 @@ document.addEventListener("DOMContentLoaded", async () => {
     checkReferral();
     showPage('home');
     setupCopyProtection();
+    
+    // Test connection
+    firebase.database().ref('.info/connected').on('value', (snap) => {
+      if (snap.val() === true) {
+        console.log("Connected to Firebase");
+      }
+    });
   } catch (error) {
-    console.error("Ошибка инициализации:", error);
+    console.error("Initialization error:", error);
     questionsByCategory = temporaryQuestions;
-    showPage('home');
   }
 });
 
 // ==================== Firebase Functions ====================
 
-// Загрузка вопросов из Firebase
 async function loadQuestionsFromFirebase() {
   try {
     const snapshot = await firebase.database().ref('questions').once('value');
-    const firebaseQuestions = snapshot.val();
-    
-    if (firebaseQuestions) {
-      questionsByCategory = firebaseQuestions;
+    if (snapshot.exists()) {
+      questionsByCategory = snapshot.val();
       
-      // Перемешиваем вопросы для каждой категории
+      // Shuffle questions
       for (const category in questionsByCategory) {
-        if (questionsByCategory[category] && questionsByCategory[category].length > 0) {
+        if (category !== 'all') {
           questionsByCategory[category] = shuffleArray(questionsByCategory[category]);
         }
       }
       
-      // Обновляем объединенную категорию
+      // Update 'all' category
       questionsByCategory.all = [
         ...(questionsByCategory.quran || []),
         ...(questionsByCategory.hadisy || []),
         ...(questionsByCategory.history || [])
       ];
-    } else {
-      questionsByCategory = temporaryQuestions;
     }
   } catch (error) {
-    console.error("Ошибка загрузки вопросов:", error);
+    console.error("Load questions error:", error);
     questionsByCategory = temporaryQuestions;
   }
 }
 
-// Инициализация данных пользователя
-// Инициализация пользователя с улучшенной обработкой ошибок
 async function initUserData() {
-  try {
-    // Загрузка из localStorage
-    const savedScore = parseInt(localStorage.getItem("quizScore")) || 0;
-    const savedRefCount = parseInt(localStorage.getItem("referralCount")) || 0;
-    
-    score = savedScore;
-    referralCount = savedRefCount;
+  // Load from localStorage
+  score = parseInt(localStorage.getItem("quizScore")) || 0;
+  referralCount = parseInt(localStorage.getItem("referralCount")) || 0;
 
-    // Проверка Telegram WebApp
-    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
-      userData = Telegram.WebApp.initDataUnsafe.user;
-      userId = userData.id.toString();
-      
+  // Check Telegram user
+  if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+    userData = Telegram.WebApp.initDataUnsafe.user;
+    userId = userData.id.toString();
+    
+    try {
       const userRef = firebase.database().ref('users/' + userId);
-      
-      // Проверяем существование пользователя
       const snapshot = await userRef.once('value');
       
       if (!snapshot.exists()) {
-        // Новый пользователь
-        const userDataToSave = {
+        // Create new user
+        await userRef.set({
           id: userId,
-          firstName: userData.first_name || 'Гость',
+          firstName: userData.first_name,
           lastName: userData.last_name || '',
           username: userData.username || '',
           score: score,
           referrals: referralCount,
           lastActive: firebase.database.ServerValue.TIMESTAMP,
-          createdAt: firebase.database.ServerValue.TIMESTAMP,
-          isTelegramUser: true
-        };
-        
-        console.log("Создаем нового пользователя:", userDataToSave);
-        await userRef.set(userDataToSave);
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
       } else {
-        // Существующий пользователь
+        // Update existing user
         const user = snapshot.val();
-        console.log("Найден существующий пользователь:", user);
-        
-        // Обновляем только необходимые поля
-        const updates = {
-          score: user.score !== undefined ? user.score : score,
-          referrals: user.referrals !== undefined ? user.referrals : referralCount,
-          lastActive: firebase.database.ServerValue.TIMESTAMP
-        };
-        
-        console.log("Обновляем пользователя:", updates);
-        await userRef.update(updates);
-        
-        // Синхронизируем локальные данные
         score = user.score || score;
         referralCount = user.referrals || referralCount;
         localStorage.setItem("quizScore", score);
         localStorage.setItem("referralCount", referralCount);
+        
+        await userRef.update({ 
+          lastActive: firebase.database.ServerValue.TIMESTAMP 
+        });
       }
-    } else {
-      // Гостевой режим
+    } catch (error) {
+      console.error("User init error:", error);
       userId = "guest_" + Math.random().toString(36).substr(2, 9);
-      console.log("Гостевой режим, ID:", userId);
     }
-    
-    updateGemDisplay();
-    console.log("Данные пользователя инициализированы. Текущий счет:", score);
-  } catch (error) {
-    console.error("Ошибка инициализации пользователя:", error);
+  } else {
+    // Guest mode
     userId = "guest_" + Math.random().toString(36).substr(2, 9);
-    updateGemDisplay();
   }
+  
+  updateGemDisplay();
 }
 
-// Улучшенная функция обновления данных
 async function updateUserData(updates) {
   try {
     if (!userId.startsWith("guest_")) {
-      console.log("Обновление данных пользователя:", updates);
-      const userRef = firebase.database().ref('users/' + userId);
-      
-      // Добавляем timestamp обновления
-      const fullUpdates = {
+      await firebase.database().ref('users/' + userId).update({
         ...updates,
         lastActive: firebase.database.ServerValue.TIMESTAMP
-      };
-      
-      await userRef.update(fullUpdates);
-      console.log("Данные успешно обновлены");
+      });
       return true;
     }
     return false;
   } catch (error) {
-    console.error("Ошибка обновления данных:", error);
+    console.error("Update error:", error);
     return false;
-  }
-}
-
-// Обновление счета с улучшенной обработкой
-async function updateScore(points) {
-  try {
-    const newScore = score + points;
-    console.log(`Обновление счета: ${score} + ${points} = ${newScore}`);
-    
-    score = newScore;
-    localStorage.setItem("quizScore", score);
-    updateGemDisplay();
-    
-    if (!userId.startsWith("guest_")) {
-      const result = await updateUserData({ score: score });
-      if (!result) {
-        console.warn("Не удалось сохранить счет в Firebase");
-      }
-    }
-  } catch (error) {
-    console.error("Ошибка обновления счета:", error);
-  }
-}
-
-// Сохранение покупки в Firebase
-async function savePurchase(itemName, price) {
-  try {
-    if (!userId.startsWith("guest_")) {
-      await firebase.database().ref(`users/${userId}/purchases`).push({
-        item: itemName,
-        price: price,
-        date: firebase.database.ServerValue.TIMESTAMP
-      });
-    }
-  } catch (error) {
-    console.error("Ошибка сохранения покупки:", error);
   }
 }
 
 // ==================== Quiz Functions ====================
 
-// Начало викторины
 function startQuiz(category) {
-  if (!questionsByCategory[category] || questionsByCategory[category].length === 0) {
+  if (!questionsByCategory[category]?.length) {
     alert("Вопросы загружаются, попробуйте позже");
     return;
   }
@@ -273,29 +191,28 @@ function startQuiz(category) {
   loadQuestion();
 }
 
-// Загрузка вопроса
 function loadQuestion() {
   if (currentQuestionIndex >= shuffledQuestions.length) {
     currentQuestionIndex = 0;
     shuffledQuestions = shuffleArray(shuffledQuestions);
   }
 
-  const questionData = shuffledQuestions[currentQuestionIndex];
   const questionElement = document.getElementById("question");
   const answersContainer = document.getElementById("answers");
   const nextButton = document.getElementById("nextQuestion");
 
-  // Сброс предыдущего состояния
+  // Reset state
   questionElement.classList.remove("show");
   nextButton.classList.remove("show");
   answersContainer.innerHTML = "";
 
-  // Анимация появления
+  // Show question with animation
   setTimeout(() => {
+    const questionData = shuffledQuestions[currentQuestionIndex];
     questionElement.textContent = questionData.question;
     questionElement.classList.add("show");
 
-    // Добавление вариантов ответов
+    // Add answer buttons
     questionData.answers.forEach((answer, index) => {
       const button = document.createElement("button");
       button.className = "answer-button";
@@ -309,29 +226,27 @@ function loadQuestion() {
   }, 300);
 }
 
-// Проверка ответа
 function checkAnswer(index) {
   const questionData = shuffledQuestions[currentQuestionIndex];
   const buttons = document.querySelectorAll(".answer-button");
 
-  // Отключение всех кнопок
-  buttons.forEach(button => button.disabled = true);
+  // Disable all buttons
+  buttons.forEach(btn => btn.disabled = true);
 
   if (index === questionData.correctAnswer) {
-    // Правильный ответ
+    // Correct answer
     buttons[index].classList.add("correct");
     updateScore(1);
   } else {
-    // Неправильный ответ
+    // Wrong answer
     buttons[index].classList.add("incorrect");
     buttons[questionData.correctAnswer].classList.add("correct");
   }
 
-  // Автопереход к следующему вопросу
+  // Auto proceed to next question
   setTimeout(loadNextQuestion, 1500);
 }
 
-// Следующий вопрос
 function loadNextQuestion() {
   currentQuestionIndex++;
   loadQuestion();
@@ -339,7 +254,6 @@ function loadNextQuestion() {
 
 // ==================== User Functions ====================
 
-// Обновление счета
 async function updateScore(points) {
   score += points;
   localStorage.setItem("quizScore", score);
@@ -351,23 +265,20 @@ async function updateScore(points) {
   updateGemDisplay();
 }
 
-// Обновление отображения GEM
 function updateGemDisplay() {
   document.getElementById("profileGemCount").textContent = score;
   document.getElementById("gemBalance").textContent = score;
   document.getElementById("modalUserGem").textContent = score;
 }
 
-// Инициализация Telegram WebApp
 function initTelegramWebApp() {
-  if (window.Telegram && window.Telegram.WebApp) {
+  if (window.Telegram?.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
     userData = Telegram.WebApp.initDataUnsafe.user;
   }
 }
 
-// Обновление профиля
 function updateProfile() {
   const profileName = document.getElementById("profileName");
   if (userData) {
@@ -377,156 +288,169 @@ function updateProfile() {
   }
 }
 
-// ==================== REFERRAL SYSTEM ====================
+// ==================== Referral System ====================
 
-let referralCode = null;
-
-// Проверка реферальной ссылки при загрузке
 function checkReferral() {
-// Получаем параметры URL
-const urlParams = new URLSearchParams(window.location.search);
-const refCode = urlParams.get('ref');
+  const urlParams = new URLSearchParams(window.location.search);
+  const refUserId = urlParams.get("ref");
 
-if (refCode) {
-  // Сохраняем реферальный код
-  referralCode = refCode;
-  localStorage.setItem('lastReferral', refCode);
-  console.log('Найден реферальный код:', refCode);
-  
-  // Проверяем, чтобы пользователь не ссылался сам на себя
-  if (!userId.startsWith("guest_") && refCode !== userId) {
-    processReferral(refCode);
-  }
-}
-}
-
-// Обработка реферала
-async function processReferral(referrerId) {
-try {
-  // 1. Проверяем, не активировал ли уже пользователь этот реферальный код
-  const activatedReferrals = JSON.parselocalStorage.getItem('activatedReferrals') || [];
-  
-  if (activatedReferrals.includes(referrerId)) {
-    console.log('Реферальный код уже был активирован ранее');
-    return;
-  }
-
-  // 2. Добавляем реферала к пользователю
-  const referrerRef = firebase.database().ref(`users/${referrerId}`);
-  
-  // Используем транзакцию для безопасного обновления
-  await referrerRef.transaction((user) => {
-    if (user) {
-      user.referrals = (user.referrals || 0) + 1;
-      user.score = (user.score || 0) + 50; // 5 GEM за реферала
+  if (refUserId && refUserId !== userId) {
+    const activatedReferrals = JSON.parselocalStorage.getItem('activatedReferrals') || [];
+    if (!activatedReferrals.includes(refUserId)) {
+      activatedReferrals.push(refUserId);
+      localStorage.setItem('activatedReferrals', JSON.stringify(activatedReferrals));
+      addReferral();
+      
+      // Add bonus to referrer
+      if (!refUserId.startsWith("guest_")) {
+        firebase.database().ref('users/' + refUserId).transaction(user => {
+          if (user) user.score = (user.score || 0) + 5;
+          return user;
+        });
+      }
     }
-    return user;
-  });
+  }
+}
 
-  // 3. Начисляем бонус новому пользователю
-  await updateScore(5); // 5 GEM за использование кода
-  referralCount += 1;
+async function addReferral() {
+  referralCount++;
   localStorage.setItem("referralCount", referralCount);
-  
-  // 4. Сохраняем информацию об активации
-  activatedReferrals.push(referrerId);
-  localStorage.setItem('activatedReferrals', JSON.stringify(activatedReferrals));
-  
-  console.log('Реферальный код успешно активирован! Начислено 5 GEM');
-  
-  // Обновляем статистику
+  await updateScore(5);
   updateReferralStats();
   
-} catch (error) {
-  console.error('Ошибка обработки реферального кода:', error);
-}
-}
-
-// Генерация реферальной ссылки
-function generateReferralLink() {
-if (!userId) return 'https://t.me/web3quiz_bot';
-
-// Для Telegram WebApp
-if (window.Telegram && window.Telegram.WebApp) {
-  return `https://t.me/web3quiz_bot?start=ref_${userId}`;
+  if (!userId.startsWith("guest_")) {
+    await updateUserData({ referrals: referralCount });
+  }
 }
 
-// Для обычного браузера
-return `${window.location.origin}${window.location.pathname}?ref=${userId}`;
-}
-
-// Поделиться реферальной ссылкой
-function shareReferralLink() {
-const link = generateReferralLink();
-
-// В Telegram WebApp
-if (window.Telegram && window.Telegram.WebApp) {
-  Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
-  return;
-}
-
-// В обычном браузере
-if (navigator.share) {
-  navigator.share({
-    title: 'Исламская Викторина',
-    text: 'Проверь свои знания и зарабатывай GEM!',
-    url: link
-  }).catch(() => copyToClipboard(link));
-} else {
-  copyToClipboard(link);
-}
-}
-
-// Копирование в буфер обмена
-function copyToClipboard(text) {
-navigator.clipboard.writeText(text).then(() => {
-  alert('Ссылка скопирована в буфер обмена!\n' + text);
-}).catch(() => {
-  const input = document.createElement('input');
-  input.value = text;
-  document.body.appendChild(input);
-  input.select();
-  document.execCommand('copy');
-  document.body.removeChild(input);
-  alert('Ссылка скопирована: ' + text);
-});
-}
-
-// Обновление статистики рефералов
 function updateReferralStats() {
-document.getElementById("referralCount").textContent = referralCount;
-document.getElementById("referralBonus").textContent = referralCount * 5;
+  document.getElementById("referralCount").textContent = referralCount;
+  document.getElementById("referralBonus").textContent = referralCount * 5;
+}
 
-// Обновляем в Firebase
-if (!userId.startsWith("guest_")) {
-  firebase.database().ref(`users/${userId}`).update({
-    referrals: referralCount
+function generateReferralLink() {
+  if (!userId) return 'https://t.me/islamquiz_bot';
+  return `https://t.me/islamquiz_bot?start=ref_${userId}`;
+}
+
+function shareReferralLink() {
+  const link = generateReferralLink();
+  
+  if (window.Telegram?.WebApp) {
+    Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
+  } else if (navigator.share) {
+    navigator.share({
+      title: 'Исламская Викторина',
+      text: 'Проверь свои знания и зарабатывай GEM!',
+      url: link
+    }).catch(() => copyToClipboard(link));
+  } else {
+    copyToClipboard(link);
+  }
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Ссылка скопирована в буфер обмена!\n' + text);
+  }).catch(() => {
+    const input = document.createElement('input');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    alert('Ссылка скопирована: ' + text);
   });
 }
+
+// ==================== Leaderboard Functions ====================
+
+async function loadLeaderboard() {
+  const leaderboardElement = document.getElementById("leaderboard");
+  
+  try {
+    // Show loading state
+    leaderboardElement.innerHTML = `
+      <li class="loading">
+        <div class="loading-spinner"></div>
+        <span>Загрузка рейтинга...</span>
+      </li>
+    `;
+    
+    // Get data from Firebase
+    const snapshot = await firebase.database().ref('users')
+      .orderByChild('score')
+      .limitToLast(10)
+      .once('value');
+    
+    // Process data
+    const users = [];
+    snapshot.forEach(childSnapshot => {
+      const user = childSnapshot.val();
+      if (user?.score > 0) {
+        users.push({
+          id: childSnapshot.key,
+          name: `${user.firstName || 'Аноним'} ${user.lastName || ''}`.trim(),
+          score: user.score
+        });
+      }
+    });
+    
+    // Sort by score
+    users.sort((a, b) => b.score - a.score);
+    
+    // Render or show message
+    if (users.length > 0) {
+      renderLeaderboard(leaderboardElement, users);
+    } else {
+      showNoDataMessage(leaderboardElement);
+    }
+    
+  } catch (error) {
+    console.error("Leaderboard error:", error);
+    showErrorMessage(leaderboardElement);
+  }
 }
 
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+function renderLeaderboard(element, users) {
+  const topIcons = ['🥇', '🥈', '🥉'];
+  
+  element.innerHTML = users.map((user, index) => `
+    <li class="leader-item ${index < 3 ? `top-${index + 1}` : ''}">
+      <span class="leader-pos">${index < 3 ? topIcons[index] : index + 1}</span>
+      <span class="leader-name">${user.name}</span>
+      <span class="leader-score">${user.score} GEM</span>
+    </li>
+  `).join('');
+}
 
-document.addEventListener("DOMContentLoaded", async () => {
-// ... остальная инициализация ...
+function showNoDataMessage(element) {
+  element.innerHTML = `
+    <li class="no-data">
+      <img src="icons/no-data.svg" alt="Нет данных">
+      <span>Пока никто не участвовал</span>
+    </li>
+  `;
+}
 
-// Инициализируем реферальную систему
-checkReferral();
-updateReferralStats();
-
-// Для кнопки "Пригласить друзей"
-document.querySelector('.action-btn[onclick="shareReferralLink()"]')
-  .addEventListener('click', shareReferralLink);
-});
+function showErrorMessage(element) {
+  element.innerHTML = `
+    <li class="error">
+      <img src="icons/error.svg" alt="Ошибка">
+      <div>
+        <span>Ошибка загрузки</span>
+        <button onclick="loadLeaderboard()">Повторить</button>
+      </div>
+    </li>
+  `;
+}
 
 // ==================== Shop Functions ====================
 
-// Переворот книги
 function flipBook(book) {
   book.classList.toggle("flipped");
 }
 
-// Покупка товара
 async function buyItem(price, itemName, event) {
   event.stopPropagation();
   if (score >= price) {
@@ -538,96 +462,47 @@ async function buyItem(price, itemName, event) {
   }
 }
 
-// ==================== Leaderboard Functions ====================
-
-// Загрузка таблицы лидеров
-async function loadLeaderboard() {
+async function savePurchase(itemName, price) {
   try {
-    const leaderboardElement = document.getElementById("leaderboard");
-    leaderboardElement.innerHTML = "<li class='loading'>Загрузка рейтинга...</li>";
-
-    const snapshot = await firebase.database().ref('users')
-      .orderByChild('score')
-      .limitToLast(10)
-      .once('value');
-
-    const users = [];
-    snapshot.forEach(childSnapshot => {
-      const user = childSnapshot.val();
-      user.id = childSnapshot.key;
-      if (user.score > 0) {
-        users.push(user);
-      }
-    });
-
-    // Сортировка по убыванию
-    users.sort((a, b) => (b.score || 0) - (a.score || 0));
-
-    leaderboardElement.innerHTML = '';
-    
-    if (users.length === 0) {
-      leaderboardElement.innerHTML = "<li class='no-data'>Нет данных о пользователях</li>";
-      return;
+    if (!userId.startsWith("guest_")) {
+      await firebase.database().ref(`users/${userId}/purchases`).push({
+        item: itemName,
+        price: price,
+        date: firebase.database.ServerValue.TIMESTAMP
+      });
     }
-
-    const topIcons = ['🥇', '🥈', '🥉'];
-    
-    users.forEach((user, index) => {
-      const li = document.createElement("li");
-      li.className = "leader-item";
-      
-      li.innerHTML = `
-        <span class="leader-pos">${index < 3 ? topIcons[index] : index + 1}</span>
-        <span class="leader-name">${user.firstName || 'Аноним'} ${user.lastName || ''}</span>
-        <span class="leader-score">${user.score || 0} GEM</span>
-      `;
-      
-      if (index < 3) {
-        li.classList.add(`top-${index + 1}`);
-      }
-      
-      leaderboardElement.appendChild(li);
-    });
-
   } catch (error) {
-    console.error("Ошибка загрузки таблицы лидеров:", error);
-    document.getElementById("leaderboard").innerHTML = 
-      "<li class='error'>Ошибка загрузки. Проверьте соединение.</li>";
+    console.error("Save purchase error:", error);
   }
 }
 
 // ==================== UI Functions ====================
 
-// Переключение страниц
 function showPage(pageId) {
+  // Hide all pages
   document.querySelectorAll(".page").forEach(page => {
     page.style.display = "none";
   });
   
+  // Show requested page
   const pageElement = document.getElementById(`${pageId}-page`);
   if (pageElement) {
     pageElement.style.display = "block";
     
-    // Специальные действия для некоторых страниц
-    if (pageId === 'leaders') {
-      loadLeaderboard();
-    } else if (pageId === 'shop') {
-      updateGemDisplay();
-    }
+    // Special actions for some pages
+    if (pageId === 'leaders') loadLeaderboard();
+    if (pageId === 'shop') updateGemDisplay();
   }
-
-  // Обновление активной кнопки навигации
+  
+  // Update active nav button
   document.querySelectorAll(".nav-button").forEach(button => {
     button.classList.remove("active");
   });
   
-  const activeButton = document.querySelector(`.nav-button[onclick="showPage('${pageId}')"]`);
-  if (activeButton) {
-    activeButton.classList.add("active");
-  }
+  const activeButton = document.querySelector(`.nav-button[onclick*="showPage('${pageId}')"]`);
+  if (activeButton) activeButton.classList.add("active");
 }
 
-// Модальное окно профиля
 function openProfileModal() {
   const modal = document.getElementById("profileModal");
   modal.style.display = "flex";
@@ -647,7 +522,7 @@ function closeProfileModal() {
   document.getElementById("profileModal").style.display = "none";
 }
 
-// Обработчик клика вне модального окна
+// Close modal when clicking outside
 window.onclick = function(event) {
   if (event.target === document.getElementById("profileModal")) {
     closeProfileModal();
@@ -656,7 +531,6 @@ window.onclick = function(event) {
 
 // ==================== Utility Functions ====================
 
-// Перемешивание массива
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -665,7 +539,6 @@ function shuffleArray(array) {
   return array;
 }
 
-// Защита от копирования
 function setupCopyProtection() {
   document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
@@ -680,7 +553,7 @@ function setupCopyProtection() {
   });
   
   function showCopyAlert() {
-    if (window.Telegram && window.Telegram.WebApp) {
+    if (window.Telegram?.WebApp) {
       Telegram.WebApp.showAlert('Копирование запрещено');
     } else {
       alert('Копирование запрещено');
@@ -688,466 +561,16 @@ function setupCopyProtection() {
   }
 }
 
-// Подписка на Telegram
 function subscribeTelegram() {
   window.open("https://t.me/islamskie_viktorini", "_blank");
   updateScore(10);
   alert("+10 GEM за подписку!");
 }
 
-// Начало игры 1vs1
 function startOneVsOne() {
   showPage('one-vs-one');
   document.getElementById("status").textContent = "Поиск соперника...";
-  // Здесь должна быть реализация поиска соперника
   setTimeout(() => {
     document.getElementById("status").textContent = "Соперник не найден. Попробуйте позже.";
   }, 5000);
 }
-
-// Добавление нового вопроса (для админа)
-async function addQuestionToFirebase(category, questionData) {
-  try {
-    const newQuestionRef = firebase.database().ref(`questions/${category}`).push();
-    await newQuestionRef.set(questionData);
-    console.log("Вопрос добавлен с ID:", newQuestionRef.key);
-    return true;
-  } catch (error) {
-    console.error("Ошибка добавления вопроса:", error);
-    return false;
-  }
-}
-
-
-// ==================== REFERRAL SHARE FUNCTION ====================
-
-function shareReferralLink() {
-  const referralLink = generateReferralLink();
-  const message = `Присоединяйся к Исламской Викторине! 🕌\nПроверь свои знания и зарабатывай GEM!\n\nМоя реферальная ссылка: ${referralLink}\n\n#Ислам #Викторина #Quiz`;
-  
-  // Для мобильных устройств (Android/iOS)
-  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    // Попробуем открыть Telegram
-    window.open(`tg://msg?text=${encodeURIComponent(message)}`, '_blank');
-    
-    // Фолбэк для iOS
-    setTimeout(() => {
-      if (document.hidden) return;
-      window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
-    }, 200);
-  }
-  // Для Desktop версии Telegram
-  else if (navigator.userAgent.includes('Telegram')) {
-    Telegram.WebApp.shareUrl(referralLink, "Присоединяйся к Исламской Викторине!");
-  }
-  // Для веб-версии (копирование + alert)
-  else {
-    copyToClipboard(referralLink, message);
-  }
-}
-
-// Улучшенная функция копирования с сообщением
-function copyToClipboard(link, message) {
-  navigator.clipboard.writeText(message || link).then(() => {
-    alert('Реферальная ссылка скопирована! Вставьте её в любой мессенджер:\n\n' + link);
-  }).catch(() => {
-    // Fallback для старых браузеров
-    const textarea = document.createElement('textarea');
-    textarea.value = message || link;
-    textarea.style.position = 'fixed';
-    document.body.appendChild(textarea);
-    textarea.select();
-    
-    try {
-      document.execCommand('copy');
-      alert('Ссылка скопирована! Вставьте её в любой мессенджер:\n\n' + link);
-    } catch (err) {
-      alert('Не удалось скопировать ссылку. Скопируйте вручную:\n\n' + link);
-    }
-    
-    document.body.removeChild(textarea);
-  });
-}
-
-// Генерация реферальной ссылки
-function generateReferralLink() {
-  if (!userId) return 'https://t.me/web3quiz_bot';
-  
-  // Для Telegram
-  if (window.Telegram && window.Telegram.WebApp) {
-    return `https://t.me/web3quiz_bot?start=ref_${userId}`;
-  }
-  
-  // Для других платформ
-  return `${window.location.origin}?ref=${userId}`;
-}
-
-// ==================== UI КНОПКА ====================
-
-// Добавьте этот код в инициализацию
-document.addEventListener("DOMContentLoaded", () => {
-  const shareBtn = document.querySelector('.action-btn[onclick*="shareReferralLink"]');
-  if (shareBtn) {
-    shareBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      shareReferralLink();
-    });
-  }
-});
-
-
-
-
-
-
-
-// Инициализация Firebase
-function initializeFirebase() {
-  try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    return firebase.database();
-  } catch (error) {
-    console.error("Ошибка инициализации Firebase:", error);
-    return null;
-  }
-}
-
-// Загрузка вопросов из Firebase
-async function loadQuestionsFromFirebase() {
-  try {
-    const database = initializeFirebase();
-    if (!database) {
-      console.log("Firebase не инициализирован, используем временные вопросы");
-      return temporaryQuestions;
-    }
-
-    const snapshot = await database.ref('questions').once('value');
-    const firebaseQuestions = snapshot.val();
-    
-    if (firebaseQuestions) {
-      console.log("Вопросы успешно загружены из Firebase");
-      return firebaseQuestions;
-    } else {
-      console.log("В Firebase нет вопросов, используем временные");
-      return temporaryQuestions;
-    }
-  } catch (error) {
-    console.error("Ошибка загрузки вопросов:", error);
-    return temporaryQuestions;
-  }
-}
-
-// Сохранение данных пользователя
-async function saveUserData(userId, userData) {
-  try {
-    const database = initializeFirebase();
-    if (!database) return false;
-
-    await database.ref('users/' + userId).set(userData);
-    console.log("Данные пользователя сохранены в Firebase");
-    return true;
-  } catch (error) {
-    console.error("Ошибка сохранения данных пользователя:", error);
-    return false;
-  }
-}
-
-// Обновление данных пользователя
-async function updateUserData(userId, updates) {
-  try {
-    const database = initializeFirebase();
-    if (!database) return false;
-
-    await database.ref('users/' + userId).update(updates);
-    console.log("Данные пользователя обновлены в Firebase");
-    return true;
-  } catch (error) {
-    console.error("Ошибка обновления данных пользователя:", error);
-    return false;
-  }
-}
-
-
-
-
-
-
-async function initUserData() {
-  try {
-    // Загрузка из localStorage
-    const savedScore = parseInt(localStorage.getItem("quizScore")) || 0;
-    const savedRefCount = parseInt(localStorage.getItem("referralCount")) || 0;
-    
-    score = savedScore;
-    referralCount = savedRefCount;
-
-    // Проверка Telegram WebApp
-    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.initDataUnsafe?.user) {
-      userData = Telegram.WebApp.initDataUnsafe.user;
-      userId = userData.id.toString();
-      
-      const userDataToSave = {
-        id: userId,
-        firstName: userData.first_name || 'Гость',
-        lastName: userData.last_name || '',
-        username: userData.username || '',
-        score: score,
-        referrals: referralCount,
-        lastActive: firebase.database.ServerValue.TIMESTAMP,
-        createdAt: firebase.database.ServerValue.TIMESTAMP,
-        isTelegramUser: true
-      };
-
-      // Проверяем существование пользователя
-      const database = initializeFirebase();
-      if (database) {
-        const snapshot = await database.ref('users/' + userId).once('value');
-        
-        if (!snapshot.exists()) {
-          await saveUserData(userId, userDataToSave);
-        } else {
-          await updateUserData(userId, {
-            score: score,
-            referrals: referralCount,
-            lastActive: firebase.database.ServerValue.TIMESTAMP
-          });
-        }
-      }
-    } else {
-      // Гостевой режим
-      userId = "guest_" + Math.random().toString(36).substr(2, 9);
-    }
-    
-    updateGemDisplay();
-  } catch (error) {
-    console.error("Ошибка инициализации пользователя:", error);
-    userId = "guest_" + Math.random().toString(36).substr(2, 9);
-    updateGemDisplay();
-  }
-}
-
-
-
-
-
-async function processReferral(referrerId) {
-  try {
-    // Проверяем, не активировал ли уже пользователь этот реферальный код
-    const activatedReferrals = JSON.parse(localStorage.getItem('activatedReferrals')) || [];
-    
-    if (activatedReferrals.includes(referrerId)) {
-      console.log('Реферальный код уже был активирован ранее');
-      return;
-    }
-
-    const database = initializeFirebase();
-    if (!database) return;
-
-    // Добавляем реферала к пользователю
-    await database.ref(`users/${referrerId}`).transaction((user) => {
-      if (user) {
-        user.referrals = (user.referrals || 0) + 1;
-        user.score = (user.score || 0) + 5; // 5 GEM за реферала
-      }
-      return user;
-    });
-
-    // Начисляем бонус новому пользователю
-    await updateScore(5);
-    referralCount += 1;
-    localStorage.setItem("referralCount", referralCount);
-    
-    // Сохраняем информацию об активации
-    activatedReferrals.push(referrerId);
-    localStorage.setItem('activatedReferrals', JSON.stringify(activatedReferrals));
-    
-    console.log('Реферальный код успешно активирован! Начислено 5 GEM');
-    updateReferralStats();
-    
-  } catch (error) {
-    console.error('Ошибка обработки реферального кода:', error);
-  }
-}
-
-
-
-
-async function loadLeaderboard() {
-  try {
-    const leaderboardElement = document.getElementById("leaderboard");
-    leaderboardElement.innerHTML = "<li class='loading'>Загрузка рейтинга...</li>";
-
-    const database = initializeFirebase();
-    if (!database) {
-      leaderboardElement.innerHTML = "<li class='error'>Ошибка подключения к Firebase</li>";
-      return;
-    }
-
-    const snapshot = await database.ref('users')
-      .orderByChild('score')
-      .limitToLast(10)
-      .once('value');
-
-    const users = [];
-    snapshot.forEach(childSnapshot => {
-      const user = childSnapshot.val();
-      user.id = childSnapshot.key;
-      if (user.score > 0) {
-        users.push(user);
-      }
-    });
-
-    users.sort((a, b) => (b.score || 0) - (a.score || 0));
-    leaderboardElement.innerHTML = '';
-    
-    if (users.length === 0) {
-      leaderboardElement.innerHTML = "<li class='no-data'>Нет данных о пользователях</li>";
-      return;
-    }
-
-    const topIcons = ['🥇', '🥈', '🥉'];
-    
-    users.forEach((user, index) => {
-      const li = document.createElement("li");
-      li.className = "leader-item";
-      
-      li.innerHTML = `
-        <span class="leader-pos">${index < 3 ? topIcons[index] : index + 1}</span>
-        <span class="leader-name">${user.firstName || user.first_name || 'Аноним'} ${user.lastName || user.last_name || ''}</span>
-        <span class="leader-score">${user.score || 0} GEM</span>
-      `;
-      
-      if (index < 3) {
-        li.classList.add(`top-${index + 1}`);
-      }
-      
-      leaderboardElement.appendChild(li);
-    });
-
-  } catch (error) {
-    console.error("Ошибка загрузки таблицы лидеров:", error);
-    document.getElementById("leaderboard").innerHTML = 
-      "<li class='error'>Ошибка загрузки. Проверьте соединение.</li>";
-  }
-}
-
-
-window.addEventListener('error', function(event) {
-  console.error('Global error:', event.error);
-  if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.showAlert('Произошла ошибка: ' + event.error.message);
-  } else {
-    alert('Произошла ошибка: ' + event.error.message);
-  }
-});
-
-
-
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    // Инициализация Firebase
-    initializeFirebase();
-    
-    // Инициализация Telegram WebApp
-    initTelegramWebApp();
-    
-    // Загрузка вопросов
-    questionsByCategory = await loadQuestionsFromFirebase();
-    
-    // Инициализация пользователя
-    await initUserData();
-    
-    // Обновление интерфейса
-    updateProfile();
-    updateReferralStats();
-    checkReferral();
-    
-    // Показать главную страницу
-    showPage('home');
-    
-    // Защита от копирования
-    setupCopyProtection();
-    
-  } catch (error) {
-    console.error("Ошибка инициализации:", error);
-    questionsByCategory = temporaryQuestions;
-    showPage('home');
-  }
-});
-
-
-
-// Улучшенная функция загрузки вопросов
-async function loadQuestionsFromFirebase() {
-  try {
-    const database = firebase.database();
-    const snapshot = await database.ref('questions').once('value');
-    const questions = snapshot.val();
-    
-    if (!questions) {
-      console.log("Вопросы не найдены в Firebase, используем временные");
-      return temporaryQuestions;
-    }
-    
-    // Проверяем структуру данных
-    const requiredCategories = ['quran', 'hadisy', 'history', 'all'];
-    for (const category of requiredCategories) {
-      if (!questions[category]) {
-        console.log(`Категория ${category} не найдена, используем временные вопросы`);
-        questions[category] = temporaryQuestions[category] || [];
-      }
-    }
-    
-    return questions;
-  } catch (error) {
-    console.error("Ошибка загрузки вопросов:", error);
-    return temporaryQuestions;
-  }
-}
-
-// Функция сохранения результата
-async function saveQuizResult(userId, score) {
-  try {
-    const database = firebase.database();
-    await database.ref(`users/${userId}/score`).set(score);
-    console.log("Результат сохранен в Firebase");
-  } catch (error) {
-    console.error("Ошибка сохранения результата:", error);
-  }
-}
-
-
-
-async function checkFirebaseConnection() {
-  try {
-    const database = firebase.database();
-    const connectedRef = database.ref(".info/connected");
-    
-    connectedRef.on("value", function(snap) {
-      if (snap.val() === true) {
-        console.log("Подключено к Firebase");
-      } else {
-        console.log("Нет подключения к Firebase");
-      }
-    });
-    
-    // Проверяем доступность базы данных
-    await database.ref(".info/serverTimeOffset").once('value');
-    return true;
-  } catch (error) {
-    console.error("Ошибка подключения к Firebase:", error);
-    return false;
-  }
-}
-
-
-
-document.addEventListener("DOMContentLoaded", async () => {
-  const isConnected = await checkFirebaseConnection();
-  if (!isConnected) {
-    alert("Нет подключения к серверу. Используем локальные данные.");
-  }
-  // Остальная инициализация...
-});
