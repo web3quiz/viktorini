@@ -555,6 +555,76 @@ button {
     color: rgba(255, 255, 255, 0.7);
 }
 
+/* Стили для таблицы лидеров */
+#leaderboard {
+    list-style: none;
+    margin: 20px auto;
+    padding: 0 15px;
+    max-width: 500px;
+}
+
+#leaderboard .loading,
+#leaderboard .no-data,
+#leaderboard .error {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.leader-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.leader-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(5px);
+}
+
+.leader-pos {
+    font-weight: bold;
+    min-width: 40px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.leader-name {
+    flex-grow: 1;
+    margin: 0 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.leader-score {
+    background: #5D3A8E;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Стили для топ-3 */
+.leader-item.top-1 .leader-pos {
+    color: #FFD700;
+    font-size: 20px;
+}
+
+.leader-item.top-2 .leader-pos {
+    color: #C0C0C0;
+    font-size: 19px;
+}
+
+.leader-item.top-3 .leader-pos {
+    color: #CD7F32;
+    font-size: 18px;
+}
+
 /* Адаптивность */
 @media (max-width: 500px) {
     #leaderboard li {
