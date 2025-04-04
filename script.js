@@ -377,67 +377,147 @@ async function initUserData() {
     }
   }
   
-  // ==================== Referral System ====================
+// ==================== REFERRAL SYSTEM ====================
+
+let referralCode = null;
+
+// Проверка реферальной ссылки при загрузке
+function checkReferral() {
+  // Получаем параметры URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const refCode = urlParams.get('ref');
   
-  // Генерация реферальной ссылки
-  function generateReferralLink() {
-    const botUsername = "islamquiz_bot";
-    return userData ? `https://t.me/${botUsername}?start=ref_${userId}` : `https://t.me/${botUsername}`;
+  if (refCode) {
+    // Сохраняем реферальный код
+    referralCode = refCode;
+    localStorage.setItem('lastReferral', refCode);
+    console.log('Найден реферальный код:', refCode);
+    
+    // Проверяем, чтобы пользователь не ссылался сам на себя
+    if (!userId.startsWith("guest_") && refCode !== userId) {
+      processReferral(refCode);
+    }
   }
-  
-  // Добавление реферала
-  async function addReferral() {
-    referralCount++;
+}
+
+// Обработка реферала
+async function processReferral(referrerId) {
+  try {
+    // 1. Проверяем, не активировал ли уже пользователь этот реферальный код
+    const activatedReferrals = JSON.parselocalStorage.getItem('activatedReferrals') || [];
+    
+    if (activatedReferrals.includes(referrerId)) {
+      console.log('Реферальный код уже был активирован ранее');
+      return;
+    }
+
+    // 2. Добавляем реферала к пользователю
+    const referrerRef = firebase.database().ref(`users/${referrerId}`);
+    
+    // Используем транзакцию для безопасного обновления
+    await referrerRef.transaction((user) => {
+      if (user) {
+        user.referrals = (user.referrals || 0) + 1;
+        user.score = (user.score || 0) + 50; // 5 GEM за реферала
+      }
+      return user;
+    });
+
+    // 3. Начисляем бонус новому пользователю
+    await updateScore(5); // 5 GEM за использование кода
+    referralCount += 1;
     localStorage.setItem("referralCount", referralCount);
-    updateScore(5);
+    
+    // 4. Сохраняем информацию об активации
+    activatedReferrals.push(referrerId);
+    localStorage.setItem('activatedReferrals', JSON.stringify(activatedReferrals));
+    
+    console.log('Реферальный код успешно активирован! Начислено 5 GEM');
+    
+    // Обновляем статистику
     updateReferralStats();
     
-    if (!userId.startsWith("guest_")) {
-      await updateUserData({ referrals: referralCount });
-    }
+  } catch (error) {
+    console.error('Ошибка обработки реферального кода:', error);
+  }
+}
+
+// Генерация реферальной ссылки
+function generateReferralLink() {
+  if (!userId) return 'https://t.me/web3quiz_bot';
+  
+  // Для Telegram WebApp
+  if (window.Telegram && window.Telegram.WebApp) {
+    return `https://t.me/web3quiz_bot?start=ref_${userId}`;
   }
   
-  // Обновление статистики рефералов
-  function updateReferralStats() {
-    document.getElementById("referralCount").textContent = referralCount;
-    document.getElementById("referralBonus").textContent = referralCount * 5;
+  // Для обычного браузера
+  return `${window.location.origin}${window.location.pathname}?ref=${userId}`;
+}
+
+// Поделиться реферальной ссылкой
+function shareReferralLink() {
+  const link = generateReferralLink();
+  
+  // В Telegram WebApp
+  if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
+    return;
   }
   
-  // Проверка реферальной ссылки
-  function checkReferral() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const refUserId = urlParams.get("ref");
-  
-    if (refUserId && refUserId !== userId) {
-      const lastRef = localStorage.getItem("lastReferral");
-      if (lastRef !== refUserId) {
-        localStorage.setItem("lastReferral", refUserId);
-        addReferral();
-        
-        // Начисление GEM рефереру
-        if (!refUserId.startsWith("guest_")) {
-          firebase.database().ref('users/' + refUserId).transaction(user => {
-            if (user) {
-              user.score = (user.score || 0) + 5;
-            }
-            return user;
-          });
-        }
-      }
-    }
+  // В обычном браузере
+  if (navigator.share) {
+    navigator.share({
+      title: 'Исламская Викторина',
+      text: 'Проверь свои знания и зарабатывай GEM!',
+      url: link
+    }).catch(() => copyToClipboard(link));
+  } else {
+    copyToClipboard(link);
   }
+}
+
+// Копирование в буфер обмена
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Ссылка скопирована в буфер обмена!\n' + text);
+  }).catch(() => {
+    const input = document.createElement('input');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    alert('Ссылка скопирована: ' + text);
+  });
+}
+
+// Обновление статистики рефералов
+function updateReferralStats() {
+  document.getElementById("referralCount").textContent = referralCount;
+  document.getElementById("referralBonus").textContent = referralCount * 5;
   
-  // Поделиться реферальной ссылкой
-  function shareReferralLink() {
-    const link = generateReferralLink();
-    if (window.Telegram && window.Telegram.WebApp) {
-      Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
-    } else {
-      navigator.clipboard.writeText(link).then(() => {
-        alert("Ссылка скопирована в буфер обмена!\n" + link);
-      });
-    }
+  // Обновляем в Firebase
+  if (!userId.startsWith("guest_")) {
+    firebase.database().ref(`users/${userId}`).update({
+      referrals: referralCount
+    });
   }
+}
+
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
+document.addEventListener("DOMContentLoaded", async () => {
+  // ... остальная инициализация ...
+  
+  // Инициализируем реферальную систему
+  checkReferral();
+  updateReferralStats();
+  
+  // Для кнопки "Пригласить друзей"
+  document.querySelector('.action-btn[onclick="shareReferralLink()"]')
+    .addEventListener('click', shareReferralLink);
+});
   
   // ==================== Shop Functions ====================
   
@@ -637,3 +717,81 @@ async function initUserData() {
       return false;
     }
   }
+
+
+
+// ==================== REFERRAL SHARE FUNCTION ====================
+
+function shareReferralLink() {
+    const referralLink = generateReferralLink();
+    const message = `Присоединяйся к Исламской Викторине! 🕌\nПроверь свои знания и зарабатывай GEM!\n\nМоя реферальная ссылка: ${referralLink}\n\n#Ислам #Викторина #Quiz`;
+    
+    // Для мобильных устройств (Android/iOS)
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      // Попробуем открыть Telegram
+      window.open(`tg://msg?text=${encodeURIComponent(message)}`, '_blank');
+      
+      // Фолбэк для iOS
+      setTimeout(() => {
+        if (document.hidden) return;
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
+      }, 200);
+    }
+    // Для Desktop версии Telegram
+    else if (navigator.userAgent.includes('Telegram')) {
+      Telegram.WebApp.shareUrl(referralLink, "Присоединяйся к Исламской Викторине!");
+    }
+    // Для веб-версии (копирование + alert)
+    else {
+      copyToClipboard(referralLink, message);
+    }
+  }
+  
+  // Улучшенная функция копирования с сообщением
+  function copyToClipboard(link, message) {
+    navigator.clipboard.writeText(message || link).then(() => {
+      alert('Реферальная ссылка скопирована! Вставьте её в любой мессенджер:\n\n' + link);
+    }).catch(() => {
+      // Fallback для старых браузеров
+      const textarea = document.createElement('textarea');
+      textarea.value = message || link;
+      textarea.style.position = 'fixed';
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      try {
+        document.execCommand('copy');
+        alert('Ссылка скопирована! Вставьте её в любой мессенджер:\n\n' + link);
+      } catch (err) {
+        alert('Не удалось скопировать ссылку. Скопируйте вручную:\n\n' + link);
+      }
+      
+      document.body.removeChild(textarea);
+    });
+  }
+  
+  // Генерация реферальной ссылки
+  function generateReferralLink() {
+    if (!userId) return 'https://t.me/web3quiz_bot';
+    
+    // Для Telegram
+    if (window.Telegram && window.Telegram.WebApp) {
+      return `https://t.me/web3quiz_bot?start=ref_${userId}`;
+    }
+    
+    // Для других платформ
+    return `${window.location.origin}?ref=${userId}`;
+  }
+  
+  // ==================== UI КНОПКА ====================
+  
+  // Добавьте этот код в инициализацию
+  document.addEventListener("DOMContentLoaded", () => {
+    const shareBtn = document.querySelector('.action-btn[onclick*="shareReferralLink"]');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        shareReferralLink();
+      });
+    }
+  });
