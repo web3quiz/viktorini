@@ -657,3 +657,152 @@ async function loadLeaderboard() {
       document.getElementById("status").textContent = "Соперник не найден. Попробуйте позже.";
     }, 5000);
   }
+
+
+  // Улучшенная функция сохранения пользователя
+async function saveUserData(user) {
+    try {
+      const userRef = firebase.database().ref('users/' + user.id);
+      
+      // Проверяем, существует ли пользователь
+      const snapshot = await userRef.once('value');
+      
+      const userData = {
+        id: user.id,
+        firstName: user.firstName || 'Гость',
+        lastName: user.lastName || '',
+        score: user.score || 0,
+        referrals: user.referrals || 0,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        createdAt: snapshot.exists() ? 
+          (snapshot.val().createdAt || firebase.database.ServerValue.TIMESTAMP) : 
+          firebase.database.ServerValue.TIMESTAMP
+      };
+      
+      // Обновляем только необходимые поля
+      await userRef.update(userData);
+      
+      console.log('Данные пользователя сохранены:', userData);
+      return true;
+    } catch (error) {
+      console.error('Ошибка сохранения пользователя:', error);
+      return false;
+    }
+  }
+  
+  // Обновлённая инициализация пользователя
+  async function initUser() {
+    try {
+      // 1. Проверяем Telegram пользователя
+      if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        const tgUser = Telegram.WebApp.initDataUnsafe.user;
+        userId = tgUser.id.toString();
+        
+        const user = {
+          id: userId,
+          firstName: tgUser.first_name,
+          lastName: tgUser.last_name || '',
+          username: tgUser.username || '',
+          score: parseInt(localStorage.getItem("quizScore")) || 0,
+          referrals: parseInt(localStorage.getItem("referralCount")) || 0
+        };
+        
+        await saveUserData(user);
+        return user;
+      }
+      
+      // 2. Гостевой режим
+      userId = "guest_" + Math.random().toString(36).substr(2, 9);
+      return {
+        id: userId,
+        firstName: 'Гость',
+        score: 0,
+        referrals: 0
+      };
+      
+    } catch (error) {
+      console.error('Ошибка инициализации пользователя:', error);
+      userId = "error_" + Date.now();
+      return {
+        id: userId,
+        firstName: 'Гость',
+        score: 0,
+        referrals: 0
+      };
+    }
+  }
+
+
+
+  // Обновление счёта с сохранением в Firebase
+async function updateScore(points) {
+    try {
+      // 1. Обновляем локальные значения
+      score = (parseInt(localStorage.getItem("quizScore")) || 0) + points;
+      localStorage.setItem("quizScore", score);
+      
+      // 2. Обновляем в Firebase (если не гость)
+      if (!userId.startsWith("guest_")) {
+        await firebase.database().ref('users/' + userId).update({
+          score: score,
+          lastActive: firebase.database.ServerValue.TIMESTAMP
+        });
+      }
+      
+      // 3. Обновляем отображение
+      updateGemDisplay();
+      
+      console.log('Счёт обновлён:', score);
+      return true;
+    } catch (error) {
+      console.error('Ошибка обновления счёта:', error);
+      return false;
+    }
+  }
+  
+  // Обновление рефералов
+  async function updateReferrals(count) {
+    try {
+      referralCount = count;
+      localStorage.setItem("referralCount", count);
+      
+      if (!userId.startsWith("guest_")) {
+        await firebase.database().ref('users/' + userId).update({
+          referrals: count,
+          lastActive: firebase.database.ServerValue.TIMESTAMP
+        });
+      }
+      
+      updateReferralStats();
+      return true;
+    } catch (error) {
+      console.error('Ошибка обновления рефералов:', error);
+      return false;
+    }
+  }
+
+
+
+  // Функция для проверки данных пользователя
+async function checkUserData() {
+    try {
+      if (!userId) return;
+      
+      const snapshot = await firebase.database().ref('users/' + userId).once('value');
+      console.log('Данные пользователя в Firebase:', snapshot.val());
+      
+      // Проверка всех пользователей
+      const allUsers = await firebase.database().ref('users').once('value');
+      console.log('Все пользователи:', allUsers.val());
+      
+    } catch (error) {
+      console.error('Ошибка проверки данных:', error);
+    }
+  }
+  
+  // Добавьте в конец инициализации
+  document.addEventListener("DOMContentLoaded", async () => {
+    // ... ваш существующий код ...
+    
+    await checkUserData(); // Для отладки
+  });
