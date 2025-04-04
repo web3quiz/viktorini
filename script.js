@@ -363,13 +363,53 @@ const firebaseConfig = {
     });
   }
   
-  // ==================== Leaderboard Functions ====================
+  // ==================== LEADERBOARD FUNCTIONS ====================
+// Проверка подключения Firebase
+function initFirebase() {
+    return new Promise((resolve) => {
+      const ref = firebase.database().ref('.info/connected');
+      ref.on('value', (snap) => {
+        if (snap.val() === true) {
+          console.log('Firebase: Connected');
+          resolve(true);
+        } else {
+          console.log('Firebase: Not connected');
+          resolve(false);
+        }
+      });
+      
+      // Таймаут для проверки
+      setTimeout(() => resolve(false), 3000);
+    });
+  }
   
-  async function loadLeaderboard() {
+  // Обновленный обработчик загрузки
+  document.addEventListener("DOMContentLoaded", async () => {
+    const isConnected = await initFirebase();
+    
+    if (!isConnected) {
+      console.error("Нет подключения к Firebase");
+      document.getElementById("leaderboard").innerHTML = `
+        <li class="error">
+          <img src="icons/error.svg" alt="Ошибка">
+          <div>
+            <span>Нет подключения к серверу</span>
+            <button onclick="location.reload()">Обновить</button>
+            <small>Проверьте интернет-соединение</small>
+          </div>
+        </li>
+      `;
+      return;
+    }
+    
+    // Остальная инициализация...
+  });
+async function loadLeaderboard() {
     const leaderboardElement = document.getElementById("leaderboard");
+    const leaderboardHeader = document.querySelector(".leaderboard-header");
     
     try {
-      // Show loading state
+      // Показываем состояние загрузки
       leaderboardElement.innerHTML = `
         <li class="loading">
           <div class="loading-spinner"></div>
@@ -377,17 +417,28 @@ const firebaseConfig = {
         </li>
       `;
       
-      // Get data from Firebase
+      // Проверяем соединение с Firebase
+      const connectionRef = firebase.database().ref('.info/connected');
+      const connectionSnapshot = await connectionRef.once('value');
+      
+      if (!connectionSnapshot.val()) {
+        throw new Error("Нет соединения с Firebase");
+      }
+      
+      // Получаем данные
+      console.log("Запрашиваем данные лидерборда...");
       const snapshot = await firebase.database().ref('users')
         .orderByChild('score')
         .limitToLast(10)
         .once('value');
       
-      // Process data
+      console.log("Данные получены:", snapshot.val());
+      
+      // Обрабатываем данные
       const users = [];
       snapshot.forEach(childSnapshot => {
         const user = childSnapshot.val();
-        if (user?.score > 0) {
+        if (user && (user.score || user.score === 0)) {
           users.push({
             id: childSnapshot.key,
             name: `${user.firstName || 'Аноним'} ${user.lastName || ''}`.trim(),
@@ -396,19 +447,29 @@ const firebaseConfig = {
         }
       });
       
-      // Sort by score
-      users.sort((a, b) => b.score - a.score);
-      
-      // Render or show message
-      if (users.length > 0) {
-        renderLeaderboard(leaderboardElement, users);
-      } else {
+      if (users.length === 0) {
+        console.log("Нет данных о пользователях");
         showNoDataMessage(leaderboardElement);
+        return;
       }
       
+      // Сортируем по убыванию
+      users.sort((a, b) => b.score - a.score);
+      
+      // Рендерим таблицу
+      renderLeaderboard(leaderboardElement, users);
+      
     } catch (error) {
-      console.error("Leaderboard error:", error);
-      showErrorMessage(leaderboardElement);
+      console.error("Ошибка загрузки лидерборда:", error);
+      showErrorMessage(leaderboardElement, error.message);
+      
+      // Показываем тестовые данные для отладки
+      const testData = [
+        {id: "test1", name: "Тест 1", score: 100},
+        {id: "test2", name: "Тест 2", score: 80},
+        {id: "test3", name: "Тест 3", score: 50}
+      ];
+      renderLeaderboard(leaderboardElement, testData);
     }
   }
   
@@ -417,9 +478,15 @@ const firebaseConfig = {
     
     element.innerHTML = users.map((user, index) => `
       <li class="leader-item ${index < 3 ? `top-${index + 1}` : ''}">
-        <span class="leader-pos">${index < 3 ? topIcons[index] : index + 1}</span>
-        <span class="leader-name">${user.name}</span>
-        <span class="leader-score">${user.score} GEM</span>
+        <span class="leader-pos">
+          ${index < 3 ? topIcons[index] : index + 1}
+        </span>
+        <span class="leader-name" title="${user.name}">
+          ${user.name}
+        </span>
+        <span class="leader-score">
+          ${user.score} GEM
+        </span>
       </li>
     `).join('');
   }
@@ -433,16 +500,32 @@ const firebaseConfig = {
     `;
   }
   
-  function showErrorMessage(element) {
+  function showErrorMessage(element, message) {
     element.innerHTML = `
       <li class="error">
         <img src="icons/error.svg" alt="Ошибка">
         <div>
-          <span>Ошибка загрузки</span>
-          <button onclick="loadLeaderboard()">Повторить</button>
+          <span>${message || 'Ошибка загрузки'}</span>
+          <button onclick="retryLeaderboard()">Повторить</button>
+          <small>Показаны тестовые данные</small>
         </div>
       </li>
     `;
+  }
+  
+  function retryLeaderboard() {
+    console.log("Повторная попытка загрузки...");
+    loadLeaderboard();
+  }
+  
+  // Проверка правил Firebase (добавьте в инициализацию)
+  async function checkFirebaseRules() {
+    try {
+      const rules = await firebase.database().ref('.settings/rules').once('value');
+      console.log("Правила Firebase:", rules.val());
+    } catch (error) {
+      console.warn("Не удалось проверить правила Firebase:", error);
+    }
   }
   
   // ==================== Shop Functions ====================
