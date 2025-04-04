@@ -680,3 +680,64 @@
     width: 100%;
     max-width: 500px;
   }
+
+
+  /* Добавьте эти стили в конец файла style.css */
+
+/* Заголовки страниц */
+.page h1 {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 30px;
+    position: sticky;
+    top: 0;
+    background-color: #160033;
+    padding: 15px 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Уменьшим отступы для страниц с фиксированными заголовками */
+  .page {
+    padding-top: 0;
+  }
+  
+  /* Особые стили для главной страницы */
+  #home-page {
+    padding-top: 20px;
+  }
+  
+  /* Подвинем контент страниц ниже заголовков */
+  .quiz-container,
+  .categories-container,
+  .about-container,
+  .shop-container,
+  #leaderboard {
+    margin-top: 60px;
+  }
+  
+  /* Подвинем кнопку назад выше */
+  .back-button {
+    position: fixed;
+    top: 25px;
+    left: 15px;
+    z-index: 200;
+  }
+  
+  /* Для страницы 1vs1 */
+  #one-vs-one-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #one-vs-one-page h1 {
+    position: static;
+    margin-top: 60px;
+  }
+  
+  #status {
+    margin-top: 20px;
+    text-align: center;
+  }
