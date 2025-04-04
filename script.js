@@ -126,28 +126,31 @@ const firebaseConfig = {
   }
   
   // Инициализация данных пользователя
-  async function initUserData() {
-    // Загрузка из localStorage
-    const savedScore = localStorage.getItem("quizScore");
-    if (savedScore) score = parseInt(savedScore);
-    
-    const savedRefCount = localStorage.getItem("referralCount");
-    if (savedRefCount) referralCount = parseInt(savedRefCount);
-  
-    // Проверка Telegram WebApp
-    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
-      userData = Telegram.WebApp.initDataUnsafe.user;
-      userId = userData.id.toString();
+// Инициализация пользователя с улучшенной обработкой ошибок
+async function initUserData() {
+    try {
+      // Загрузка из localStorage
+      const savedScore = parseInt(localStorage.getItem("quizScore")) || 0;
+      const savedRefCount = parseInt(localStorage.getItem("referralCount")) || 0;
       
-      try {
+      score = savedScore;
+      referralCount = savedRefCount;
+  
+      // Проверка Telegram WebApp
+      if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
+        userData = Telegram.WebApp.initDataUnsafe.user;
+        userId = userData.id.toString();
+        
         const userRef = firebase.database().ref('users/' + userId);
+        
+        // Проверяем существование пользователя
         const snapshot = await userRef.once('value');
         
         if (!snapshot.exists()) {
-          // Создание нового пользователя
-          const newUser = {
+          // Новый пользователь
+          const userDataToSave = {
             id: userId,
-            firstName: userData.first_name,
+            firstName: userData.first_name || 'Гость',
             lastName: userData.last_name || '',
             username: userData.username || '',
             score: score,
@@ -156,42 +159,87 @@ const firebaseConfig = {
             createdAt: firebase.database.ServerValue.TIMESTAMP,
             isTelegramUser: true
           };
-          await userRef.set(newUser);
+          
+          console.log("Создаем нового пользователя:", userDataToSave);
+          await userRef.set(userDataToSave);
         } else {
-          // Обновление существующего пользователя
+          // Существующий пользователь
           const user = snapshot.val();
+          console.log("Найден существующий пользователь:", user);
+          
+          // Обновляем только необходимые поля
+          const updates = {
+            score: user.score !== undefined ? user.score : score,
+            referrals: user.referrals !== undefined ? user.referrals : referralCount,
+            lastActive: firebase.database.ServerValue.TIMESTAMP
+          };
+          
+          console.log("Обновляем пользователя:", updates);
+          await userRef.update(updates);
+          
+          // Синхронизируем локальные данные
           score = user.score || score;
           referralCount = user.referrals || referralCount;
           localStorage.setItem("quizScore", score);
           localStorage.setItem("referralCount", referralCount);
-          
-          await userRef.update({ 
-            lastActive: firebase.database.ServerValue.TIMESTAMP 
-          });
         }
-      } catch (error) {
-        console.error("Ошибка загрузки пользователя:", error);
+      } else {
+        // Гостевой режим
         userId = "guest_" + Math.random().toString(36).substr(2, 9);
+        console.log("Гостевой режим, ID:", userId);
       }
-    } else {
-      // Гостевой режим
+      
+      updateGemDisplay();
+      console.log("Данные пользователя инициализированы. Текущий счет:", score);
+    } catch (error) {
+      console.error("Ошибка инициализации пользователя:", error);
       userId = "guest_" + Math.random().toString(36).substr(2, 9);
+      updateGemDisplay();
     }
-    
-    updateGemDisplay();
   }
   
-  // Обновление данных пользователя
+  // Улучшенная функция обновления данных
   async function updateUserData(updates) {
     try {
       if (!userId.startsWith("guest_")) {
-        await firebase.database().ref('users/' + userId).update({
+        console.log("Обновление данных пользователя:", updates);
+        const userRef = firebase.database().ref('users/' + userId);
+        
+        // Добавляем timestamp обновления
+        const fullUpdates = {
           ...updates,
           lastActive: firebase.database.ServerValue.TIMESTAMP
-        });
+        };
+        
+        await userRef.update(fullUpdates);
+        console.log("Данные успешно обновлены");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Ошибка обновления данных:", error);
+      return false;
+    }
+  }
+  
+  // Обновление счета с улучшенной обработкой
+  async function updateScore(points) {
+    try {
+      const newScore = score + points;
+      console.log(`Обновление счета: ${score} + ${points} = ${newScore}`);
+      
+      score = newScore;
+      localStorage.setItem("quizScore", score);
+      updateGemDisplay();
+      
+      if (!userId.startsWith("guest_")) {
+        const result = await updateUserData({ score: score });
+        if (!result) {
+          console.warn("Не удалось сохранить счет в Firebase");
+        }
       }
     } catch (error) {
-      console.error("Ошибка обновления:", error);
+      console.error("Ошибка обновления счета:", error);
     }
   }
   
