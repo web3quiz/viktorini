@@ -1,9 +1,10 @@
 // Основные переменные
 let currentQuestionIndex = 0;
-let score = 0;
+let score = parseInt(localStorage.getItem("quizScore")) || 0;
 let shuffledQuestions = [];
 let userData = null;
 let userId = null;
+let referralCount = parseInt(localStorage.getItem("referralCount")) || 0;
 let questionsByCategory = {
     quran: [],
     hadisy: [],
@@ -44,44 +45,95 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Инициализация данных пользователя
 async function initUserData() {
+    // Загружаем сохраненные данные
+    const savedScore = localStorage.getItem("quizScore");
+    if (savedScore) score = parseInt(savedScore);
+    
+    const savedRefCount = localStorage.getItem("referralCount");
+    if (savedRefCount) referralCount = parseInt(savedRefCount);
+
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
-        const tgUser = Telegram.WebApp.initDataUnsafe.user;
-        userId = tgUser.id.toString();
+        userData = Telegram.WebApp.initDataUnsafe.user;
+        userId = userData.id.toString();
         
-        const userData = {
-            id: userId,
-            firstName: tgUser.first_name,
-            lastName: tgUser.last_name || '',
-            username: tgUser.username || '',
-            score: score,
-            referrals: parseInt(localStorage.getItem("referralCount")) || 0
-        };
-        
-        await saveUserData(userData);
+        try {
+            const snapshot = await firebase.database().ref('users/' + userId).once('value');
+            
+            if (!snapshot.exists()) {
+                // Новый пользователь
+                await saveUserData({
+                    id: userId,
+                    firstName: userData.first_name,
+                    lastName: userData.last_name || '',
+                    username: userData.username || '',
+                    score: score,
+                    referrals: referralCount,
+                    lastActive: new Date().toISOString(),
+                    createdAt: new Date().toISOString()
+                });
+            } else {
+                // Существующий пользователь
+                const user = snapshot.val();
+                score = user.score || score;
+                referralCount = user.referrals || referralCount;
+                
+                // Обновляем локальное хранилище
+                localStorage.setItem("quizScore", score);
+                localStorage.setItem("referralCount", referralCount);
+                
+                // Обновляем последнюю активность
+                await updateUserData({ lastActive: new Date().toISOString() });
+            }
+        } catch (error) {
+            console.error("Ошибка загрузки пользователя:", error);
+            // Создаем временного гостя
+            userId = "guest_" + Math.random().toString(36).substr(2, 9);
+        }
     } else {
-        // Для гостей
+        // Гость
         userId = "guest_" + Math.random().toString(36).substr(2, 9);
-        score = parseInt(localStorage.getItem("quizScore")) || 0;
     }
+    
     updateGemDisplay();
 }
 
 // Сохранение данных пользователя
 async function saveUserData(data) {
     try {
-        await firebase.database().ref('users/' + userId).set(data);
+        await firebase.database().ref('users/' + data.id).set(data);
+        console.log("Данные пользователя сохранены");
     } catch (error) {
-        console.error("Ошибка сохранения данных:", error);
+        console.error("Ошибка сохранения:", error);
     }
 }
 
 // Обновление данных пользователя
 async function updateUserData(updates) {
     try {
-        await firebase.database().ref('users/' + userId).update(updates);
+        if (!userId.startsWith("guest_")) {
+            await firebase.database().ref('users/' + userId).update({
+                ...updates,
+                lastActive: new Date().toISOString()
+            });
+        }
     } catch (error) {
-        console.error("Ошибка обновления данных:", error);
+        console.error("Ошибка обновления:", error);
     }
+}
+
+// Обновление счета
+async function updateScore(points) {
+    score += points;
+    
+    // Сохраняем локально
+    localStorage.setItem("quizScore", score);
+    
+    // Обновляем в Firebase для авторизованных пользователей
+    if (!userId.startsWith("guest_")) {
+        await updateUserData({ score: score });
+    }
+    
+    updateGemDisplay();
 }
 
 // Загрузка вопросов из Firebase
@@ -102,7 +154,7 @@ async function loadQuestionsFromFirebase() {
                 questionsByCategory[category] = shuffleArray(questionsByCategory[category]);
             }
         } else {
-            console.warn("Вопросы не найдены в базе данных");
+            console.warn("Вопросы не найдены, используем тестовые");
             questionsByCategory = {
                 quran: [{
                     question: "Сколько сур в Коране?",
@@ -133,17 +185,12 @@ function updateGemDisplay() {
     document.getElementById("profileGemCount").textContent = score;
     document.getElementById("gemBalance").textContent = score;
     document.getElementById("modalUserGem").textContent = score;
-    localStorage.setItem("quizScore", score);
-    
-    if (userData) {
-        updateUserData({ score: score });
-    }
 }
 
-// Начало викторины
+// Викторина
 function startQuiz(category) {
     if (!questionsByCategory[category] || questionsByCategory[category].length === 0) {
-        alert("Вопросы загружаются, попробуйте через несколько секунд");
+        alert("Вопросы загружаются, попробуйте позже");
         return;
     }
     
@@ -153,7 +200,6 @@ function startQuiz(category) {
     loadQuestion();
 }
 
-// Загрузка вопроса
 function loadQuestion() {
     if (currentQuestionIndex >= shuffledQuestions.length) {
         shuffledQuestions = shuffleArray(shuffledQuestions);
@@ -186,14 +232,12 @@ function loadQuestion() {
     }, 300);
 }
 
-// Проверка ответа
 function checkAnswer(index) {
     const questionData = shuffledQuestions[currentQuestionIndex];
     const buttons = document.querySelectorAll(".answer-button");
 
     if (index === questionData.correctAnswer) {
-        score++;
-        updateGemDisplay();
+        updateScore(1);
         buttons[index].classList.add("correct");
     } else {
         buttons[index].classList.add("incorrect");
@@ -204,19 +248,9 @@ function checkAnswer(index) {
     setTimeout(loadNextQuestion, 1000);
 }
 
-// Следующий вопрос
 function loadNextQuestion() {
     currentQuestionIndex++;
     loadQuestion();
-}
-
-// Перемешивание массива
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
 }
 
 // Реферальная система
@@ -225,35 +259,18 @@ function generateReferralLink() {
     return userData ? `https://t.me/${botUsername}?start=ref_${userId}` : `https://t.me/${botUsername}`;
 }
 
-function shareReferralLink() {
-    const referralLink = generateReferralLink();
-    const message = "Присоединяйтесь к викторине! " + referralLink;
-    
-    if (window.Telegram && window.Telegram.WebApp) {
-        Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`);
-    } else {
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
-    }
-}
-
 async function addReferral() {
-    const referralCount = (parseInt(localStorage.getItem("referralCount")) || 0) + 1;
-    localStorage.setItem("referralCount", referralCount.toString());
-    
-    score += 5;
-    updateGemDisplay();
+    referralCount++;
+    localStorage.setItem("referralCount", referralCount);
+    updateScore(5);
     updateReferralStats();
     
-    if (userData) {
-        await updateUserData({
-            referrals: referralCount,
-            score: score
-        });
+    if (!userId.startsWith("guest_")) {
+        await updateUserData({ referrals: referralCount });
     }
 }
 
 function updateReferralStats() {
-    const referralCount = parseInt(localStorage.getItem("referralCount")) || 0;
     document.getElementById("referralCount").textContent = referralCount;
     document.getElementById("referralBonus").textContent = referralCount * 5;
 }
@@ -275,10 +292,9 @@ function flipBook(book) {
 async function buyItem(price, itemName, event) {
     event.stopPropagation();
     if (score >= price) {
-        score -= price;
-        updateGemDisplay();
+        await updateScore(-price);
         
-        if (userData) {
+        if (!userId.startsWith("guest_")) {
             try {
                 await firebase.database().ref(`users/${userId}/purchases`).push({
                     item: itemName,
@@ -301,6 +317,15 @@ function openProfileModal() {
     const modal = document.getElementById("profileModal");
     modal.style.display = "flex";
     document.getElementById("modalUserGem").textContent = score;
+    
+    if (userData) {
+        document.getElementById("modalUserName").textContent = 
+            `${userData.first_name} ${userData.last_name || ''}`.trim();
+        document.getElementById("modalUserId").textContent = userData.id || "Не определен";
+    } else {
+        document.getElementById("modalUserName").textContent = "Гость";
+        document.getElementById("modalUserId").textContent = "Гостевой режим";
+    }
 }
 
 function closeProfileModal() {
@@ -313,10 +338,68 @@ window.onclick = function(event) {
     }
 };
 
-// Игра 1vs1
-function startOneVsOne() {
-    showPage("one-vs-one");
-    document.getElementById("status").textContent = "Ожидание соперника...";
+// Вспомогательные функции
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function showPage(pageId) {
+    document.querySelectorAll(".page").forEach(page => {
+        page.style.display = "none";
+    });
+    
+    const pageElement = document.getElementById(`${pageId}-page`);
+    if (pageElement) {
+        pageElement.style.display = "block";
+        
+        if (pageId === 'leaders') {
+            loadLeaderboard();
+        }
+    }
+
+    document.querySelectorAll(".nav-button").forEach(button => {
+        button.classList.remove("active");
+    });
+    
+    const activeButton = document.querySelector(`.nav-button[onclick="showPage('${pageId}')"]`);
+    if (activeButton) {
+        activeButton.classList.add("active");
+    }
+}
+
+// Таблица лидеров
+async function loadLeaderboard() {
+    try {
+        const leaderboardElement = document.getElementById("leaderboard");
+        leaderboardElement.innerHTML = "<li>Загрузка...</li>";
+        
+        const snapshot = await firebase.database().ref('users').orderByChild('score').limitToLast(10).once('value');
+        const users = [];
+        
+        snapshot.forEach(childSnapshot => {
+            users.push(childSnapshot.val());
+        });
+        
+        users.sort((a, b) => (b.score || 0) - (a.score || 0));
+        
+        leaderboardElement.innerHTML = "";
+        users.forEach((user, index) => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <span class="leader-position">${index + 1}</span>
+                <span class="leader-name">${user.firstName || 'Аноним'} ${user.lastName || ''}</span>
+                <span class="leader-score">${user.score || 0} GEM</span>
+            `;
+            leaderboardElement.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Ошибка загрузки таблицы лидеров:", error);
+        document.getElementById("leaderboard").innerHTML = "<li>Ошибка загрузки</li>";
+    }
 }
 
 // Защита от копирования
@@ -345,195 +428,16 @@ function setupCopyProtection() {
 // Telegram подписка
 function subscribeTelegram() {
     window.open("https://t.me/islamskie_viktorini", "_blank");
-    score += 10;
-    updateGemDisplay();
+    updateScore(10);
     alert("+10 GEM за подписку!");
-}
-
-// Переключение страниц
-function showPage(pageId) {
-    document.querySelectorAll(".page").forEach(page => {
-        page.style.display = "none";
-    });
-    
-    const pageElement = document.getElementById(`${pageId}-page`);
-    if (pageElement) {
-        pageElement.style.display = "block";
-        
-        if (pageId === 'leaders') {
-            loadLeaderboard();
-        }
-    }
-
-    document.querySelectorAll(".nav-button").forEach(button => {
-        button.classList.remove("active");
-    });
-    
-    const activeButton = document.querySelector(`.nav-button[onclick="showPage('${pageId}')"]`);
-    if (activeButton) {
-        activeButton.classList.add("active");
-    }
 }
 
 // Обновление профиля
 function updateProfile() {
     const profileName = document.getElementById("profileName");
-    const modalUserName = document.getElementById("modalUserName");
-    const modalUserId = document.getElementById("modalUserId");
-
     if (userData) {
-        const fullName = userData.first_name + (userData.last_name ? ` ${userData.last_name}` : '');
-        profileName.textContent = fullName;
-        modalUserName.textContent = fullName;
-        modalUserId.textContent = userData.id || "Не определен";
-    }
-}
-
-// Загрузка таблицы лидеров
-async function loadLeaderboard() {
-    try {
-        const leaderboardElement = document.getElementById("leaderboard");
-        leaderboardElement.innerHTML = "<li>Загрузка...</li>";
-        
-        const snapshot = await firebase.database().ref('users').orderByChild('score').limitToLast(10).once('value');
-        const users = [];
-        
-        snapshot.forEach(childSnapshot => {
-            users.push(childSnapshot.val());
-        });
-        
-        users.sort((a, b) => (b.score || 0) - (a.score || 0));
-        
-        leaderboardElement.innerHTML = "";
-        users.forEach((user, index) => {
-            const li = document.createElement("li");
-            li.innerHTML = `
-                <span class="leader-position">${index + 1}</span>
-                <span class="leader-name">${user.firstName || 'Аноним'} ${user.lastName || ''}</span>
-                <span class="leader-score">${user.score || 0} GEM</span>
-            `;
-            leaderboardElement.appendChild(li);
-        });
-    } catch (error) {
-        console.error("Ошибка загрузки таблицы лидеров:", error);
-        leaderboardElement.innerHTML = "<li>Ошибка загрузки данных</li>";
-    }
-}
-
-
-
-
-
-
-
-async function saveUserData(user) {
-    try {
-        // Создаем или обновляем данные пользователя
-        await firebase.database().ref('users/' + user.id).set({
-            id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName || '',
-            username: user.username || '',
-            score: user.score || 0,
-            referrals: user.referrals || 0,
-            lastActive: new Date().toISOString(),
-            createdAt: user.createdAt || new Date().toISOString()
-        });
-        console.log("Данные пользователя сохранены");
-    } catch (error) {
-        console.error("Ошибка сохранения данных:", error);
-    }
-}
-
-
-
-
-async function updateUserScore(points) {
-    score += points;
-    updateGemDisplay();
-    
-    if (userId && !userId.startsWith("guest_")) {
-        try {
-            await firebase.database().ref('users/' + userId).update({
-                score: score,
-                lastActive: new Date().toISOString()
-            });
-        } catch (error) {
-            console.error("Ошибка обновления счета:", error);
-        }
+        profileName.textContent = `${userData.first_name} ${userData.last_name || ''}`.trim();
     } else {
-        localStorage.setItem("quizScore", score);
+        profileName.textContent = "Гость";
     }
 }
-
-
-function handleFirebaseError(error) {
-    console.error("Firebase error:", error);
-    if (error.code === 'PERMISSION_DENIED') {
-        alert('Ошибка доступа. Попробуйте войти снова.');
-    }
-    // Другие обработчики ошибок
-}
-
-
-function authWithTelegram() {
-    // Реализация аутентификации через Telegram
-}
-
-
-
-// Добавление нового пользователя
-async function addNewUser(userId, userData) {
-    try {
-      await firebase.database().ref('users/' + userId).set({
-        firstName: userData.firstName,
-        lastName: userData.lastName || '',
-        username: userData.username || '',
-        score: userData.score || 0,
-        referrals: userData.referrals || 0,
-        lastActive: new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      });
-      console.log("Пользователь добавлен в базу данных");
-    } catch (error) {
-      console.error("Ошибка добавления пользователя:", error);
-    }
-  }
-  
-
-
-
-
-
-
-
-  // Пример использования:
-  const newUser = {
-    firstName: "Алексей",
-    lastName: "Смирнов",
-    score: 0,
-    referrals: 0
-  };
-  
-  addNewUser("user3_id", newUser);
-
-
-
-  // Обновление счета пользователя
-async function updateUserScore(userId, newScore) {
-    try {
-      await firebase.database().ref('users/' + userId).update({
-        score: newScore,
-        lastActive: new Date().toISOString()
-      });
-      console.log("Счет обновлен");
-    } catch (error) {
-      console.error("Ошибка обновления счета:", error);
-    }
-  }
-  
-  // Пример использования:
-  updateUserScore("user1_id", 200);
-
-
-
