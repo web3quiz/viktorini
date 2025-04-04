@@ -12,6 +12,82 @@ let questionsByCategory = {
     all: []
 };
 
+// Временные вопросы (если Firebase недоступен)
+const temporaryQuestions = {
+    quran: [
+        {
+            question: "Сколько сур в Коране?",
+            answers: ["114", "113", "115", "112"],
+            correctAnswer: 0
+        },
+        {
+            question: "Какая сура называется 'Сердцем Корана'?",
+            answers: ["Аль-Бакара", "Ясин", "Аль-Фатиха", "Аль-Ихлас"],
+            correctAnswer: 1
+        },
+        {
+            question: "Сколько джузов в Коране?",
+            answers: ["20", "30", "40", "50"],
+            correctAnswer: 1
+        },
+        {
+            question: "Какая сура самая длинная в Коране?",
+            answers: ["Аль-Имран", "Аль-Бакара", "Ан-Ниса", "Аль-Маида"],
+            correctAnswer: 1
+        },
+        {
+            question: "Какая сура была ниспослана первой?",
+            answers: ["Аль-Фатиха", "Аль-Аляк", "Аль-Ихлас", "Аль-Бакара"],
+            correctAnswer: 1
+        }
+    ],
+    hadisy: [
+        {
+            question: "Что Пророк (ﷺ) назвал 'главой дел'?",
+            answers: ["Намаз", "Пост", "Намерение", "Закят"],
+            correctAnswer: 2
+        },
+        {
+            question: "Кто будет тенью Аллаха в Судный день?",
+            answers: ["Ученый", "Имам", "Правитель", "Милостивый"],
+            correctAnswer: 2
+        },
+        {
+            question: "Какое дело Пророк (ﷺ) назвал лучшим после обязательной молитвы?",
+            answers: ["Доброе слово", "Джихад", "Поминание Аллаха", "Доброе отношение к родителям"],
+            correctAnswer: 3
+        },
+        {
+            question: "Что разрушает благие дела, как огонь дрова?",
+            answers: ["Лень", "Гордыня", "Зависть", "Злословие"],
+            correctAnswer: 1
+        }
+    ],
+    history: [
+        {
+            question: "Кто был первым халифом после Пророка (ﷺ)?",
+            answers: ["Умар ибн аль-Хаттаб", "Абу Бакр ас-Сиддик", "Усман ибн Аффан", "Али ибн Абу Талиб"],
+            correctAnswer: 1
+        },
+        {
+            question: "В каком году произошла Хиджра?",
+            answers: ["610 г.", "622 г.", "630 г.", "632 г."],
+            correctAnswer: 1
+        },
+        {
+            question: "Кто из сподвижников был известен как 'Обладатель двух светов'?",
+            answers: ["Абу Бакр", "Усман ибн Аффан", "Билял", "Али ибн Абу Талиб"],
+            correctAnswer: 1
+        },
+        {
+            question: "В какой битве мусульмане впервые столкнулись с византийцами?",
+            answers: ["Бадр", "Ухуд", "Мута", "Хунайн"],
+            correctAnswer: 2
+        }
+    ]
+};
+temporaryQuestions.all = [...temporaryQuestions.quran, ...temporaryQuestions.hadisy, ...temporaryQuestions.history];
+
 // Конфигурация Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyC6quHrp9tQbLwjUWrupw1C4ljQfPk3uNA",
@@ -43,9 +119,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
+// Загрузка вопросов из Firebase
+async function loadQuestionsFromFirebase() {
+    try {
+        const snapshot = await firebase.database().ref('questions').once('value');
+        const firebaseQuestions = snapshot.val();
+        
+        questionsByCategory = firebaseQuestions || temporaryQuestions;
+        
+        // Перемешиваем вопросы
+        for (const category in questionsByCategory) {
+            if (category !== 'all') {
+                questionsByCategory[category] = shuffleArray(questionsByCategory[category]);
+            }
+        }
+        
+        // Обновляем объединенную категорию
+        questionsByCategory.all = [
+            ...(questionsByCategory.quran || []),
+            ...(questionsByCategory.hadisy || []),
+            ...(questionsByCategory.history || [])
+        ];
+        
+    } catch (error) {
+        console.error("Ошибка загрузки вопросов:", error);
+        questionsByCategory = temporaryQuestions;
+    }
+}
+
 // Инициализация данных пользователя
 async function initUserData() {
-    // Загружаем сохраненные данные
+    // Проверяем localStorage
     const savedScore = localStorage.getItem("quizScore");
     if (savedScore) score = parseInt(savedScore);
     
@@ -60,7 +164,6 @@ async function initUserData() {
             const snapshot = await firebase.database().ref('users/' + userId).once('value');
             
             if (!snapshot.exists()) {
-                // Новый пользователь
                 await saveUserData({
                     id: userId,
                     firstName: userData.first_name,
@@ -72,25 +175,18 @@ async function initUserData() {
                     createdAt: new Date().toISOString()
                 });
             } else {
-                // Существующий пользователь
                 const user = snapshot.val();
                 score = user.score || score;
                 referralCount = user.referrals || referralCount;
-                
-                // Обновляем локальное хранилище
                 localStorage.setItem("quizScore", score);
                 localStorage.setItem("referralCount", referralCount);
-                
-                // Обновляем последнюю активность
                 await updateUserData({ lastActive: new Date().toISOString() });
             }
         } catch (error) {
             console.error("Ошибка загрузки пользователя:", error);
-            // Создаем временного гостя
             userId = "guest_" + Math.random().toString(36).substr(2, 9);
         }
     } else {
-        // Гость
         userId = "guest_" + Math.random().toString(36).substr(2, 9);
     }
     
@@ -101,7 +197,6 @@ async function initUserData() {
 async function saveUserData(data) {
     try {
         await firebase.database().ref('users/' + data.id).set(data);
-        console.log("Данные пользователя сохранены");
     } catch (error) {
         console.error("Ошибка сохранения:", error);
     }
@@ -124,51 +219,13 @@ async function updateUserData(updates) {
 // Обновление счета
 async function updateScore(points) {
     score += points;
-    
-    // Сохраняем локально
     localStorage.setItem("quizScore", score);
     
-    // Обновляем в Firebase для авторизованных пользователей
     if (!userId.startsWith("guest_")) {
         await updateUserData({ score: score });
     }
     
     updateGemDisplay();
-}
-
-// Загрузка вопросов из Firebase
-async function loadQuestionsFromFirebase() {
-    try {
-        const snapshot = await firebase.database().ref('questions').once('value');
-        const allQuestions = snapshot.val();
-        
-        if (allQuestions) {
-            questionsByCategory = {
-                quran: allQuestions.quran || [],
-                hadisy: allQuestions.hadisy || [],
-                history: allQuestions.history || [],
-                all: [...(allQuestions.quran || []), ...(allQuestions.hadisy || []), ...(allQuestions.history || [])]
-            };
-            
-            for (const category in questionsByCategory) {
-                questionsByCategory[category] = shuffleArray(questionsByCategory[category]);
-            }
-        } else {
-            console.warn("Вопросы не найдены, используем тестовые");
-            questionsByCategory = {
-                quran: [{
-                    question: "Сколько сур в Коране?",
-                    answers: ["114", "113", "115", "112"],
-                    correctAnswer: 0
-                }],
-                hadisy: [],
-                history: [],
-                all: []
-            };
-        }
-    } catch (error) {
-        console.error("Ошибка загрузки вопросов:", error);
-    }
 }
 
 // Инициализация Telegram WebApp
@@ -202,8 +259,8 @@ function startQuiz(category) {
 
 function loadQuestion() {
     if (currentQuestionIndex >= shuffledQuestions.length) {
-        shuffledQuestions = shuffleArray(shuffledQuestions);
         currentQuestionIndex = 0;
+        shuffledQuestions = shuffleArray(shuffledQuestions);
     }
 
     const questionData = shuffledQuestions[currentQuestionIndex];
@@ -439,5 +496,18 @@ function updateProfile() {
         profileName.textContent = `${userData.first_name} ${userData.last_name || ''}`.trim();
     } else {
         profileName.textContent = "Гость";
+    }
+}
+
+// Добавление новых вопросов в Firebase (для админа)
+async function addQuestionToFirebase(category, questionData) {
+    try {
+        const newQuestionRef = firebase.database().ref(`questions/${category}`).push();
+        await newQuestionRef.set(questionData);
+        console.log("Вопрос добавлен с ID:", newQuestionRef.key);
+        return true;
+    } catch (error) {
+        console.error("Ошибка добавления вопроса:", error);
+        return false;
     }
 }
