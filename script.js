@@ -479,3 +479,61 @@ function handleFirebaseError(error) {
 function authWithTelegram() {
     // Реализация аутентификации через Telegram
 }
+
+
+
+// Добавление нового пользователя
+async function addNewUser(userId, userData) {
+    try {
+      await firebase.database().ref('users/' + userId).set({
+        firstName: userData.firstName,
+        lastName: userData.lastName || '',
+        username: userData.username || '',
+        score: userData.score || 0,
+        referrals: userData.referrals || 0,
+        lastActive: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      });
+      console.log("Пользователь добавлен в базу данных");
+    } catch (error) {
+      console.error("Ошибка добавления пользователя:", error);
+    }
+  }
+  
+
+
+
+
+
+
+
+  // Пример использования:
+  const newUser = {
+    firstName: "Алексей",
+    lastName: "Смирнов",
+    score: 0,
+    referrals: 0
+  };
+  
+  addNewUser("user3_id", newUser);
+
+
+
+  // Обновление счета пользователя
+async function updateUserScore(userId, newScore) {
+    try {
+      await firebase.database().ref('users/' + userId).update({
+        score: newScore,
+        lastActive: new Date().toISOString()
+      });
+      console.log("Счет обновлен");
+    } catch (error) {
+      console.error("Ошибка обновления счета:", error);
+    }
+  }
+  
+  // Пример использования:
+  updateUserScore("user1_id", 200);
+
+
+
