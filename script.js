@@ -44,32 +44,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Инициализация данных пользователя
 async function initUserData() {
-    if (userData) {
-        userId = userData.id.toString();
-        try {
-            const snapshot = await firebase.database().ref('users/' + userId).once('value');
-            if (!snapshot.exists()) {
-                await saveUserData({
-                    id: userId,
-                    firstName: userData.first_name,
-                    lastName: userData.last_name || '',
-                    username: userData.username || '',
-                    score: 0,
-                    referrals: 0,
-                    lastActive: new Date().toISOString(),
-                    createdAt: new Date().toISOString()
-                });
-            } else {
-                await updateUserData({ lastActive: new Date().toISOString() });
-                score = snapshot.val().score || 0;
-            }
-        } catch (error) {
-            console.error("Ошибка инициализации пользователя:", error);
-            userId = "local_" + Math.random().toString(36).substr(2, 9);
-            score = parseInt(localStorage.getItem("quizScore")) || 0;
-        }
+    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
+        const tgUser = Telegram.WebApp.initDataUnsafe.user;
+        userId = tgUser.id.toString();
+        
+        const userData = {
+            id: userId,
+            firstName: tgUser.first_name,
+            lastName: tgUser.last_name || '',
+            username: tgUser.username || '',
+            score: score,
+            referrals: parseInt(localStorage.getItem("referralCount")) || 0
+        };
+        
+        await saveUserData(userData);
     } else {
-        userId = "local_" + Math.random().toString(36).substr(2, 9);
+        // Для гостей
+        userId = "guest_" + Math.random().toString(36).substr(2, 9);
         score = parseInt(localStorage.getItem("quizScore")) || 0;
     }
     updateGemDisplay();
@@ -411,16 +402,80 @@ async function loadLeaderboard() {
             users.push(childSnapshot.val());
         });
         
-        users.sort((a, b) => b.score - a.score);
+        users.sort((a, b) => (b.score || 0) - (a.score || 0));
         
         leaderboardElement.innerHTML = "";
         users.forEach((user, index) => {
             const li = document.createElement("li");
-            li.innerHTML = `<strong>${index + 1}. ${user.firstName || 'Аноним'}</strong>: ${user.score || 0} GEM`;
+            li.innerHTML = `
+                <span class="leader-position">${index + 1}</span>
+                <span class="leader-name">${user.firstName || 'Аноним'} ${user.lastName || ''}</span>
+                <span class="leader-score">${user.score || 0} GEM</span>
+            `;
             leaderboardElement.appendChild(li);
         });
     } catch (error) {
         console.error("Ошибка загрузки таблицы лидеров:", error);
-        document.getElementById("leaderboard").innerHTML = "<li>Ошибка загрузки</li>";
+        leaderboardElement.innerHTML = "<li>Ошибка загрузки данных</li>";
     }
+}
+
+
+
+
+
+
+
+async function saveUserData(user) {
+    try {
+        // Создаем или обновляем данные пользователя
+        await firebase.database().ref('users/' + user.id).set({
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName || '',
+            username: user.username || '',
+            score: user.score || 0,
+            referrals: user.referrals || 0,
+            lastActive: new Date().toISOString(),
+            createdAt: user.createdAt || new Date().toISOString()
+        });
+        console.log("Данные пользователя сохранены");
+    } catch (error) {
+        console.error("Ошибка сохранения данных:", error);
+    }
+}
+
+
+
+
+async function updateUserScore(points) {
+    score += points;
+    updateGemDisplay();
+    
+    if (userId && !userId.startsWith("guest_")) {
+        try {
+            await firebase.database().ref('users/' + userId).update({
+                score: score,
+                lastActive: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error("Ошибка обновления счета:", error);
+        }
+    } else {
+        localStorage.setItem("quizScore", score);
+    }
+}
+
+
+function handleFirebaseError(error) {
+    console.error("Firebase error:", error);
+    if (error.code === 'PERMISSION_DENIED') {
+        alert('Ошибка доступа. Попробуйте войти снова.');
+    }
+    // Другие обработчики ошибок
+}
+
+
+function authWithTelegram() {
+    // Реализация аутентификации через Telegram
 }

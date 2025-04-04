@@ -471,17 +471,104 @@ button {
     padding: 0 10px;
 }
 
-/* Таблица лидеров */
+/* Таблица лидеров - новая версия */
+#leaders-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 60px;
+}
+
 #leaderboard {
+    width: 100%;
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 0 15px;
     list-style: none;
-    margin-top: 20px;
 }
 
 #leaderboard li {
-    padding: 10px;
-    margin: 5px 0;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+}
+
+#leaderboard li:hover {
+    transform: translateX(5px);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.leader-position {
+    font-weight: bold;
+    color: #E7BB4C;
+    font-size: 18px;
+    min-width: 30px;
+}
+
+.leader-name {
+    flex-grow: 1;
+    margin: 0 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.leader-score {
+    background: #5D3A8E;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Стили для топ-3 позиций */
+#leaderboard li:nth-child(1) .leader-position {
+    color: #FFD700;
+    font-size: 20px;
+}
+
+#leaderboard li:nth-child(2) .leader-position {
+    color: #C0C0C0;
+    font-size: 19px;
+}
+
+#leaderboard li:nth-child(3) .leader-position {
+    color: #CD7F32;
+    font-size: 18px;
+}
+
+/* Заголовок таблицы */
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 500px;
+    padding: 0 25px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Адаптивность */
+@media (max-width: 500px) {
+    #leaderboard li {
+        padding: 12px 15px;
+    }
+    
+    .leader-name {
+        font-size: 14px;
+    }
+    
+    .leader-score {
+        padding: 4px 10px;
+        font-size: 13px;
+    }
 }
 
 /* Модальное окно */

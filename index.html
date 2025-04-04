@@ -84,13 +84,13 @@
                     </div>
                     <div class="action-cards">
                         <div class="action-card blue-card">
-                            <div class="card-icon">📩</div>
+                            
                             <h3>Пригласите друзей</h3>
                             <p>Получите 5 GEM за каждого</p>
                             <button class="action-btn" onclick="shareReferralLink()">Пригласить</button>
                         </div>
                         <div class="action-card purple-card">
-                            <div class="card-icon">📢</div>
+                            
                             <h3>Подпишитесь на Telegram</h3>
                             <p>Получите 10 GEM сразу</p>
                             <button class="action-btn" onclick="subscribeTelegram()">Подписаться</button>
@@ -110,14 +110,18 @@
             </div>
         </div>
 
-        <!-- Таблица лидеров -->
-        <div id="leaders-page" class="page">
-            <button class="back-button" onclick="showPage('home')">
-                <img src="icons/back.svg" alt="Назад">
-            </button>
-            <h1>Таблица лидеров</h1>
-            <ul id="leaderboard"></ul>
-        </div>
+       <!-- Таблица лидеров -->
+<div id="leaders-page" class="page">
+    <button class="back-button" onclick="showPage('home')">
+        <img src="icons/back.svg" alt="Назад">
+    </button>
+    <h1>Таблица лидеров</h1>
+    <div class="leaderboard-header">
+        <span>Игрок</span>
+        <span>Очки</span>
+    </div>
+    <ul id="leaderboard"></ul>
+</div>
 
         <!-- Магазин -->
         <div id="shop-page" class="page">
