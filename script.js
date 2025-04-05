@@ -568,14 +568,8 @@ function shareReferralLink() {
       window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
     }, 200);
   }
-  // Для Desktop версии Telegram
-  else if (navigator.userAgent.includes('Telegram')) {
-    Telegram.WebApp.shareUrl(referralLink, "Присоединяйся к Исламской Викторине!");
-  }
-  // Для веб-версии (копирование + alert)
-  else {
-    copyToClipboard(referralLink, message);
-  }
+  
+  
 }
 
 // Улучшенная функция копирования с сообщением
