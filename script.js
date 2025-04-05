@@ -319,8 +319,8 @@ function updateReferralStats() {
 }
 
 function generateReferralLink() {
-  if (!userId) return 'https://t.me/islamquiz_bot';
-  return `https://t.me/islamquiz_bot?start=ref_${userId}`;
+  if (!userId) return 'https://t.me/web3quiz_bot';
+  return `https://t.me/web3quiz_bot?start=ref_${userId}`;
 }
 
 function shareReferralLink() {
@@ -573,3 +573,68 @@ function startOneVsOne() {
 
 
 
+function shareReferralLink() {
+  console.log("Функция shareReferralLink вызвана"); // Добавьте эту строку
+  const link = generateReferralLink();
+  console.log("Сгенерированная ссылка:", link); // И эту
+  
+  if (window.Telegram?.WebApp) {
+    console.log("Используем Telegram WebApp.shareUrl");
+    Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
+  } else if (navigator.share) {
+    console.log("Используем Web Share API");
+    navigator.share({
+      title: 'Исламская Викторина',
+      text: 'Проверь свои знания и зарабатывай GEM!',
+      url: link
+    }).catch((error) => {
+      console.error("Ошибка Web Share API:", error);
+      copyToClipboard(link);
+    });
+  } else {
+    console.log("Используем fallback - копирование в буфер");
+    copyToClipboard(link);
+  }
+}
+
+
+function shareReferralLink() {
+  const link = generateReferralLink();
+  
+  try {
+    if (window.Telegram?.WebApp?.shareUrl) {
+      Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
+      return;
+    }
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'Исламская Викторина',
+        text: 'Проверь свои знания и зарабатывай GEM!',
+        url: link
+      }).catch(() => copyToClipboardWithAlert(link));
+      return;
+    }
+
+    // Fallback для всех остальных случаев
+    copyToClipboardWithAlert(link);
+  } catch (e) {
+    console.error("Ошибка при попытке поделиться:", e);
+    copyToClipboardWithAlert(link);
+  }
+}
+
+function copyToClipboardWithAlert(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Ссылка скопирована: ' + text);
+  }).catch(() => {
+    // Fallback для старых браузеров
+    const input = document.createElement('input');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    alert('Ссылка скопирована в буфер: ' + text);
+  });
+}
