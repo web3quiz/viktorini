@@ -290,8 +290,8 @@
     width: 100%;
     padding: 12px;
     background: linear-gradient(135deg, #2395FF, #42326C);
-    color: #fff;
-    border: none;
+    color: #E7BB4C;
+    border: 1px solid #E7BB4C;
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;

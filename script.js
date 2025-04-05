@@ -324,14 +324,14 @@ function generateReferralLink() {
 }
 
 function shareReferralLink() {
-  const link = generateReferralLink();
+  const link = `https://t.me/${CHANNEL_USERNAME.substring(1)}`;
   
-  if (window.Telegram?.WebApp) {
-    Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
+  if (window.Telegram?.WebApp?.shareUrl) {
+    Telegram.WebApp.shareUrl(link, "Подпишитесь на наш канал с исламскими викторинами!");
   } else if (navigator.share) {
     navigator.share({
-      title: 'Исламская Викторина',
-      text: 'Проверь свои знания и зарабатывай GEM!',
+      title: 'Исламские Викторины',
+      text: 'Подпишитесь на наш канал с интересными викторинами!',
       url: link
     }).catch(() => copyToClipboard(link));
   } else {
@@ -555,10 +555,32 @@ function setupCopyProtection() {
   }
 }
 
-function subscribeTelegram() {
-  window.open("https://t.me/islamskie_viktorini", "_blank");
-  updateScore(10);
-  alert("+10 GEM за подписку!");
+async function subscribeTelegram() {
+  try {
+    // Проверяем, есть ли пользователь в Telegram WebApp
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      const userId = Telegram.WebApp.initDataUnsafe.user.id;
+      
+      // Проверяем подписку
+      const isSubscribed = await checkSubscription(userId);
+      
+      if (isSubscribed) {
+        updateScore(10);
+        alert("Спасибо за подписку! +10 GEM на ваш счет.");
+      } else {
+        // Если не подписан, открываем канал и просим подписаться
+        window.open(`https://t.me/${CHANNEL_USERNAME.substring(1)}`, "_blank");
+        alert("Пожалуйста, подпишитесь на канал и нажмите кнопку снова, чтобы получить бонус.");
+      }
+    } else {
+      // Для пользователей вне Telegram просто открываем канал
+      window.open(`https://t.me/${CHANNEL_USERNAME.substring(1)}`, "_blank");
+      alert("Пожалуйста, подпишитесь на канал и вернитесь в приложение, чтобы получить бонус.");
+    }
+  } catch (error) {
+    console.error("Subscribe error:", error);
+    alert("Произошла ошибка при проверке подписки.");
+  }
 }
 
 function startOneVsOne() {
@@ -637,4 +659,45 @@ function copyToClipboardWithAlert(text) {
     document.body.removeChild(input);
     alert('Ссылка скопирована в буфер: ' + text);
   });
+}
+
+
+
+// Добавим в начало файла константы для бота и канала
+const TELEGRAM_BOT_TOKEN = '7512030725:AAHijyQ1c8RaJ7EwSbYMxFNkFmraQcYNC3s';
+const CHANNEL_USERNAME = '@islamskie_viktorini'; // Замените на реальный username канала
+
+// Добавим новую функцию для проверки подписки
+async function checkSubscription(userId) {
+  try {
+    if (!window.Telegram?.WebApp) {
+      console.log("Not in Telegram WebApp, skipping subscription check");
+      return false;
+    }
+
+    // Отправляем запрос к боту для проверки подписки
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMember`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: CHANNEL_USERNAME,
+        user_id: userId
+      })
+    });
+
+    const data = await response.json();
+    console.log("Subscription check response:", data);
+
+    if (data.ok && data.result) {
+      const status = data.result.status;
+      // Пользователь считается подписчиком, если его статус не "left" или "kicked"
+      return status !== 'left' && status !== 'kicked';
+    }
+    return false;
+  } catch (error) {
+    console.error("Subscription check error:", error);
+    return false;
+  }
 }
