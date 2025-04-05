@@ -663,41 +663,64 @@ function copyToClipboardWithAlert(text) {
 
 
 
-// Добавим в начало файла константы для бота и канала
-const TELEGRAM_BOT_TOKEN = '7512030725:AAHijyQ1c8RaJ7EwSbYMxFNkFmraQcYNC3s';
-const CHANNEL_USERNAME = '@islamskie_viktorini'; // Замените на реальный username канала
+// Константы для бота и канала
+const CHANNEL_USERNAME = '@islamskie_viktorini'; // Убедитесь, что username правильный
 
-// Добавим новую функцию для проверки подписки
-async function checkSubscription(userId) {
-  try {
+// Функция для проверки подписки через бота
+function checkSubscription() {
+  return new Promise((resolve) => {
     if (!window.Telegram?.WebApp) {
-      console.log("Not in Telegram WebApp, skipping subscription check");
-      return false;
+      console.log("Not in Telegram WebApp");
+      resolve(false);
+      return;
     }
 
-    // Отправляем запрос к боту для проверки подписки
-    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMember`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: CHANNEL_USERNAME,
-        user_id: userId
-      })
+    // Создаем обработчик для ответа от бота
+    Telegram.WebApp.onEvent('subscriptionChecked', (data) => {
+      console.log("Subscription check result:", data);
+      resolve(data.isSubscribed);
     });
 
-    const data = await response.json();
-    console.log("Subscription check response:", data);
+    // Отправляем запрос боту на проверку подписки
+    Telegram.WebApp.sendData(JSON.stringify({
+      action: 'check_subscription',
+      channel: CHANNEL_USERNAME
+    }));
+  });
+}
 
-    if (data.ok && data.result) {
-      const status = data.result.status;
-      // Пользователь считается подписчиком, если его статус не "left" или "kicked"
-      return status !== 'left' && status !== 'kicked';
+// Обновленная функция подписки
+async function subscribeTelegram() {
+  try {
+    if (!window.Telegram?.WebApp) {
+      window.open(`https://t.me/${CHANNEL_USERNAME.substring(1)}`, "_blank");
+      alert("Пожалуйста, подпишитесь на канал в Telegram");
+      return;
     }
-    return false;
+
+    const isSubscribed = await checkSubscription();
+    
+    if (isSubscribed) {
+      updateScore(10);
+      alert("Спасибо за подписку! +10 GEM на ваш счет.");
+    } else {
+      Telegram.WebApp.openTelegramLink(`https://t.me/${CHANNEL_USERNAME.substring(1)}`);
+      alert("Пожалуйста, подпишитесь на канал и нажмите кнопку снова, чтобы получить бонус.");
+    }
   } catch (error) {
-    console.error("Subscription check error:", error);
-    return false;
+    console.error("Subscribe error:", error);
+    alert("Произошла ошибка. Пожалуйста, попробуйте позже.");
+  }
+}
+
+// Обновленная функция для кнопки "Пригласить друзей"
+function shareReferralLink() {
+  const message = "Присоединяйся к Исламской Викторине!";
+  const url = `https://t.me/${CHANNEL_USERNAME.substring(1)}`;
+  
+  if (window.Telegram?.WebApp?.shareUrl) {
+    Telegram.WebApp.shareUrl(url, message);
+  } else {
+    Telegram.WebApp.openTelegramLink(url);
   }
 }
