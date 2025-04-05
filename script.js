@@ -75,6 +75,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     firebase.database().ref('.info/connected').on('value', (snap) => {
       if (snap.val() === true) {
         console.log("Connected to Firebase");
+      } else {
+        console.log("Not connected to Firebase");
       }
     });
   } catch (error) {
@@ -91,7 +93,7 @@ async function loadQuestionsFromFirebase() {
     if (snapshot.exists()) {
       questionsByCategory = snapshot.val();
     } else {
-      questionsByCategory = temporaryQuestions; // Добавьте эту строку
+      questionsByCategory = temporaryQuestions;
     }
   } catch (error) {
     console.error("Load questions error:", error);
@@ -357,80 +359,84 @@ async function loadLeaderboard() {
   const leaderboardElement = document.getElementById("leaderboard");
   
   try {
-      // Показываем загрузку
-      leaderboardElement.innerHTML = `
-          <li class="loading">
-              <div class="loading-spinner"></div>
-              <span>Загрузка рейтинга...</span>
-          </li>
-      `;
+    // Show loading state
+    leaderboardElement.innerHTML = `
+      <li class="loading">
+        <div class="loading-spinner"></div>
+        <span>Загрузка рейтинга...</span>
+      </li>
+    `;
 
-      // Загружаем топ-10 игроков из Firebase
-      const snapshot = await firebase.database().ref('users')
-  .orderByChild('score')
-  .limitToLast(10)
-  .once('value');
+    // Get top 10 players
+    const snapshot = await firebase.database().ref('users')
+      .orderByChild('score')
+      .limitToLast(10)
+      .once('value');
 
-  const users = [];
-  snapshot.forEach(childSnapshot => {
+    const users = [];
+    snapshot.forEach(childSnapshot => {
       const user = childSnapshot.val();
-      console.log("User data:", user); // <- Проверьте, что здесь есть данные
-      if (user?.score > 0) {
-          users.push({
-              id: childSnapshot.key,
-              name: `${user.firstName || 'Аноним'} ${user.lastName || ''}`.trim(),
-              score: user.score
-          });
+      console.log("User data:", user);
+      if (user?.score !== undefined) {
+        users.push({
+          id: childSnapshot.key,
+          name: `${user.firstName || user.first_name || 'Аноним'} ${user.lastName || user.last_name || ''}`.trim(),
+          score: user.score || 0
+        });
       }
-  });
-  console.log("Processed users:", users); // <- Проверьте, что массив не пустой
+    });
+    console.log("Processed users:", users);
 
-      // Сортируем по убыванию очков
-      users.sort((a, b) => b.score - a.score);
+    // Sort by score (descending)
+    users.sort((a, b) => b.score - a.score);
 
-      // Отрисовываем таблицу
-      if (users.length > 0) {
-          renderLeaderboard(leaderboardElement, users);
-      } else {
-          showNoDataMessage(leaderboardElement);
-      }
+    // Render or show message
+    if (users.length > 0) {
+      renderLeaderboard(leaderboardElement, users);
+    } else {
+      showNoDataMessage(leaderboardElement);
+    }
+    
   } catch (error) {
-      console.error("Ошибка загрузки рейтинга:", error);
-      showErrorMessage(leaderboardElement);
+    console.error("Leaderboard error:", error);
+    showErrorMessage(leaderboardElement);
   }
 }
 
 function renderLeaderboard(element, users) {
-  const topIcons = ['🥇', '🥈', '🥉']; // Иконки для топ-3
+  const topIcons = ['🥇', '🥈', '🥉'];
   
   element.innerHTML = users.map((user, index) => `
-      <li class="leader-item ${index < 3 ? `top-${index + 1}` : ''}">
-          <span class="leader-position">${index < 3 ? topIcons[index] : index + 1}</span>
-          <span class="leader-name">${user.name}</span>
-          <span class="leader-score">${user.score} GEM</span>
-      </li>
+    <li class="leader-item ${index < 3 ? `top-${index + 1}` : ''}">
+      <span class="leader-position">${index < 3 ? topIcons[index] : index + 1}</span>
+      <span class="leader-name">${user.name}</span>
+      <span class="leader-score">${user.score} GEM</span>
+    </li>
   `).join('');
 }
 
 function showNoDataMessage(element) {
   element.innerHTML = `
-      <li class="no-data">
-          <img src="icons/no-data.svg" alt="Нет данных">
-          <span>Пока никто не участвовал</span>
-      </li>
+    <li class="no-data">
+      <img src="icons/no-data.svg" alt="Нет данных">
+      <span>Пока никто не участвовал</span>
+    </li>
   `;
 }
 
 function showErrorMessage(element) {
   element.innerHTML = `
-      <li class="error">
-          <img src="icons/error.svg" alt="Ошибка">
-          <div>
-              <span>Ошибка загрузки</span>
-              <button onclick="loadLeaderboard()">Повторить</button>
-          </div>
-      </li>
+    <li class="error">
+      <img src="icons/error.svg" alt="Ошибка">
+      <div>
+        <span>Ошибка загрузки</span>
+        <button class="retry-button">Повторить</button>
+      </div>
+    </li>
   `;
+  
+  // Add event listener for retry button
+  element.querySelector('.retry-button').addEventListener('click', loadLeaderboard);
 }
 
 // ==================== Shop Functions ====================
