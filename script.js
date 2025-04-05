@@ -357,79 +357,77 @@ async function loadLeaderboard() {
   const leaderboardElement = document.getElementById("leaderboard");
   
   try {
-    // Show loading state
-    leaderboardElement.innerHTML = `
-      <li class="loading">
-        <div class="loading-spinner"></div>
-        <span>Загрузка рейтинга...</span>
-      </li>
-    `;
-    
-    // Get data from Firebase
-    const snapshot = await firebase.database().ref('users')
-      .orderByChild('score')
-      .limitToLast(10)
-      .once('value');
-    
-    // Process data
-    const users = [];
-    snapshot.forEach(childSnapshot => {
-      const user = childSnapshot.val();
-      if (user?.score > 0) {
-        users.push({
-          id: childSnapshot.key,
-          name: `${user.firstName || 'Аноним'} ${user.lastName || ''}`.trim(),
-          score: user.score
-        });
+      // Показываем загрузку
+      leaderboardElement.innerHTML = `
+          <li class="loading">
+              <div class="loading-spinner"></div>
+              <span>Загрузка рейтинга...</span>
+          </li>
+      `;
+
+      // Загружаем топ-10 игроков из Firebase
+      const snapshot = await firebase.database().ref('users')
+          .orderByChild('score')
+          .limitToLast(10)
+          .once('value');
+
+      const users = [];
+      snapshot.forEach(childSnapshot => {
+          const user = childSnapshot.val();
+          if (user?.score > 0) {
+              users.push({
+                  id: childSnapshot.key,
+                  name: `${user.firstName || 'Аноним'} ${user.lastName || ''}`.trim(),
+                  score: user.score
+              });
+          }
+      });
+
+      // Сортируем по убыванию очков
+      users.sort((a, b) => b.score - a.score);
+
+      // Отрисовываем таблицу
+      if (users.length > 0) {
+          renderLeaderboard(leaderboardElement, users);
+      } else {
+          showNoDataMessage(leaderboardElement);
       }
-    });
-    
-    // Sort by score
-    users.sort((a, b) => b.score - a.score);
-    
-    // Render or show message
-    if (users.length > 0) {
-      renderLeaderboard(leaderboardElement, users);
-    } else {
-      showNoDataMessage(leaderboardElement);
-    }
-    
   } catch (error) {
-    console.error("Leaderboard error:", error);
-    showErrorMessage(leaderboardElement);
+      console.error("Ошибка загрузки рейтинга:", error);
+      showErrorMessage(leaderboardElement);
   }
 }
 
 function renderLeaderboard(element, users) {
-  const topIcons = ['🥇', '🥈', '🥉'];
+  const topIcons = ['🥇', '🥈', '🥉']; // Иконки для топ-3
   
   element.innerHTML = users.map((user, index) => `
-    <li class="leader-item ${index < 3 ? `top-${index + 1}` : ''}">
-      <span class="leader-pos">${index < 3 ? topIcons[index] : index + 1}</span>
-      <span class="leader-name">${user.name}</span>
-      <span class="leader-score">${user.score} GEM</span>
-    </li>
+      <li class="leader-item ${index < 3 ? `top-${index + 1}` : ''}">
+          <span class="leader-position">${index < 3 ? topIcons[index] : index + 1}</span>
+          <span class="leader-name">${user.name}</span>
+          <span class="leader-score">${user.score} GEM</span>
+      </li>
   `).join('');
 }
 
 function showNoDataMessage(element) {
   element.innerHTML = `
-    <li class="no-data">
-      <img src="icons/no-data.svg" alt="Нет данных">
-      <span>Пока никто не участвовал</span>
-    </li>
+      <li class="no-data">
+          <img src="icons/no-data.svg" alt="Нет данных">
+          <span>Пока никто не участвовал</span>
+      </li>
   `;
 }
 
 function showErrorMessage(element) {
   element.innerHTML = `
-    <li class="error">
-      <img src="icons/error.svg" alt="Ошибка">
-      <div>
-        <span>Ошибка загрузки</span>
-        <button onclick="loadLeaderboard()">Повторить</button>
-      </div>
-    </li>
+      <li class="error">
+          <img src="icons/error.svg" alt="Ошибка">
+          <div>
+              <span>Ошибка загрузки</span>
+              <button onclick="loadLeaderboard()">Повторить</button>
+          </div>
+      </li>
   `;
 }
 
