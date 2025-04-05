@@ -90,20 +90,8 @@ async function loadQuestionsFromFirebase() {
     const snapshot = await firebase.database().ref('questions').once('value');
     if (snapshot.exists()) {
       questionsByCategory = snapshot.val();
-      
-      // Shuffle questions
-      for (const category in questionsByCategory) {
-        if (category !== 'all') {
-          questionsByCategory[category] = shuffleArray(questionsByCategory[category]);
-        }
-      }
-      
-      // Update 'all' category
-      questionsByCategory.all = [
-        ...(questionsByCategory.quran || []),
-        ...(questionsByCategory.hadisy || []),
-        ...(questionsByCategory.history || [])
-      ];
+    } else {
+      questionsByCategory = temporaryQuestions; // Добавьте эту строку
     }
   } catch (error) {
     console.error("Load questions error:", error);
@@ -180,11 +168,11 @@ async function updateUserData(updates) {
 // ==================== Quiz Functions ====================
 
 function startQuiz(category) {
+  console.log(`Starting quiz for category: ${category}`, questionsByCategory[category]);
   if (!questionsByCategory[category]?.length) {
     alert("Вопросы загружаются, попробуйте позже");
     return;
   }
-  
   shuffledQuestions = [...questionsByCategory[category]];
   currentQuestionIndex = 0;
   showPage('quiz');
@@ -295,7 +283,7 @@ function checkReferral() {
   const refUserId = urlParams.get("ref");
 
   if (refUserId && refUserId !== userId) {
-    const activatedReferrals = JSON.parselocalStorage.getItem('activatedReferrals') || [];
+    const activatedReferrals = JSON.parse(localStorage.getItem('activatedReferrals')) || [];
     if (!activatedReferrals.includes(refUserId)) {
       activatedReferrals.push(refUserId);
       localStorage.setItem('activatedReferrals', JSON.stringify(activatedReferrals));
