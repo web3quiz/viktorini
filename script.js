@@ -367,21 +367,23 @@ async function loadLeaderboard() {
 
       // Загружаем топ-10 игроков из Firebase
       const snapshot = await firebase.database().ref('users')
-          .orderByChild('score')
-          .limitToLast(10)
-          .once('value');
+  .orderByChild('score')
+  .limitToLast(10)
+  .once('value');
 
-      const users = [];
-      snapshot.forEach(childSnapshot => {
-          const user = childSnapshot.val();
-          if (user?.score > 0) {
-              users.push({
-                  id: childSnapshot.key,
-                  name: `${user.firstName || 'Аноним'} ${user.lastName || ''}`.trim(),
-                  score: user.score
-              });
-          }
-      });
+  const users = [];
+  snapshot.forEach(childSnapshot => {
+      const user = childSnapshot.val();
+      console.log("User data:", user); // <- Проверьте, что здесь есть данные
+      if (user?.score > 0) {
+          users.push({
+              id: childSnapshot.key,
+              name: `${user.firstName || 'Аноним'} ${user.lastName || ''}`.trim(),
+              score: user.score
+          });
+      }
+  });
+  console.log("Processed users:", users); // <- Проверьте, что массив не пустой
 
       // Сортируем по убыванию очков
       users.sort((a, b) => b.score - a.score);
