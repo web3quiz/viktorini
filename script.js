@@ -605,3 +605,81 @@ function startOneVsOne() {
     document.getElementById("status").textContent = "Соперник не найден. Попробуйте позже.";
   }, 5000);
 }
+
+
+
+// ==================== REFERRAL SHARE FUNCTION ====================
+
+function shareReferralLink() {
+  const referralLink = generateReferralLink();
+  const message = `Присоединяйся к Исламской Викторине! 🕌\nПроверь свои знания и зарабатывай GEM!\n\nМоя реферальная ссылка: ${referralLink}\n\n#Ислам #Викторина #Quiz`;
+  
+  // Для мобильных устройств (Android/iOS)
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    // Попробуем открыть Telegram
+    window.open(`tg://msg?text=${encodeURIComponent(message)}`, '_blank');
+    
+    // Фолбэк для iOS
+    setTimeout(() => {
+      if (document.hidden) return;
+      window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
+    }, 200);
+  }
+  // Для Desktop версии Telegram
+  else if (navigator.userAgent.includes('Telegram')) {
+    Telegram.WebApp.shareUrl(referralLink, "Присоединяйся к Исламской Викторине!");
+  }
+  // Для веб-версии (копирование + alert)
+  else {
+    copyToClipboard(referralLink, message);
+  }
+}
+
+// Улучшенная функция копирования с сообщением
+function copyToClipboard(link, message) {
+  navigator.clipboard.writeText(message || link).then(() => {
+    alert('Реферальная ссылка скопирована! Вставьте её в любой мессенджер:\n\n' + link);
+  }).catch(() => {
+    // Fallback для старых браузеров
+    const textarea = document.createElement('textarea');
+    textarea.value = message || link;
+    textarea.style.position = 'fixed';
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+      document.execCommand('copy');
+      alert('Ссылка скопирована! Вставьте её в любой мессенджер:\n\n' + link);
+    } catch (err) {
+      alert('Не удалось скопировать ссылку. Скопируйте вручную:\n\n' + link);
+    }
+    
+    document.body.removeChild(textarea);
+  });
+}
+
+// Генерация реферальной ссылки
+function generateReferralLink() {
+  if (!userId) return 'https://t.me/web3quiz_bot';
+  
+  // Для Telegram
+  if (window.Telegram && window.Telegram.WebApp) {
+    return `https://t.me/web3quiz_bot?start=ref_${userId}`;
+  }
+  
+  // Для других платформ
+  return `${window.location.origin}?ref=${userId}`;
+}
+
+// ==================== UI КНОПКА ====================
+
+// Добавьте этот код в инициализацию
+document.addEventListener("DOMContentLoaded", () => {
+  const shareBtn = document.querySelector('.action-btn[onclick*="shareReferralLink"]');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      shareReferralLink();
+    });
+  }
+});
