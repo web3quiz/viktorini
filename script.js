@@ -331,64 +331,8 @@ function generateReferralLink() {
   return link;
 }
 
-function shareReferralLink() {
-  try {
-    const link = generateReferralLink();
-    console.log("Sharing link:", link);
-    
-    // 1. Try Telegram WebApp method first
-    if (window.Telegram?.WebApp?.openTelegramLink) {
-      console.log("Using Telegram.WebApp.openTelegramLink");
-      Telegram.WebApp.openTelegramLink(link);
-      return;
-    }
-    
-    // 2. Try Web Share API
-    if (navigator.share) {
-      console.log("Using Web Share API");
-      navigator.share({
-        title: 'Исламская Викторина',
-        text: 'Присоединяйся к викторине и зарабатывай GEM!',
-        url: link
-      }).catch(e => {
-        console.log("Web Share failed, falling back to copy", e);
-        copyToClipboard(link);
-      });
-      return;
-    }
-    
-    // 3. Fallback - copy to clipboard
-    console.log("Falling back to clipboard copy");
-    copyToClipboard(link);
-    
-  } catch (e) {
-    console.error("Error in shareReferralLink:", e);
-    alert("Не удалось открыть чат. Ссылка скопирована в буфер.");
-    copyToClipboard(generateReferralLink());
-  }
-}
 
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    if (window.Telegram?.WebApp) {
-      Telegram.WebApp.showAlert('Ссылка скопирована в буфер обмена!');
-    } else {
-      alert('Ссылка скопирована: ' + text);
-    }
-  }).catch(() => {
-    const input = document.createElement('input');
-    input.value = text;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand('copy');
-    document.body.removeChild(input);
-    if (window.Telegram?.WebApp) {
-      Telegram.WebApp.showAlert('Ссылка скопирована!');
-    } else {
-      alert('Ссылка скопирована в буфер: ' + text);
-    }
-  });
-}
+
 
 // ==================== Leaderboard Functions ====================
 
@@ -594,8 +538,7 @@ function setupCopyProtection() {
 
 function subscribeTelegram() {
   window.open("https://t.me/islamskie_viktorini", "_blank");
-  updateScore(10);
-  alert("+10 GEM за подписку!");
+
 }
 
 function startOneVsOne() {
@@ -612,7 +555,7 @@ function startOneVsOne() {
 
 function shareReferralLink() {
   const referralLink = generateReferralLink();
-  const message = `Присоединяйся к Исламской Викторине! 🕌\nПроверь свои знания и зарабатывай GEM!\n\nМоя реферальная ссылка: ${referralLink}\n\n#Ислам #Викторина #Quiz`;
+  const message = `Присоединяйся к Исламской Викторине! 🕌\nПроверь свои знания и зарабатывай GEM!\n\nПереходи по этой ссылке: ${referralLink}\n\n#Ислам #Викторина #Quiz`;
   
   // Для мобильных устройств (Android/iOS)
   if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
@@ -671,15 +614,3 @@ function generateReferralLink() {
   return `${window.location.origin}?ref=${userId}`;
 }
 
-// ==================== UI КНОПКА ====================
-
-// Добавьте этот код в инициализацию
-document.addEventListener("DOMContentLoaded", () => {
-  const shareBtn = document.querySelector('.action-btn[onclick*="shareReferralLink"]');
-  if (shareBtn) {
-    shareBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      shareReferralLink();
-    });
-  }
-});
