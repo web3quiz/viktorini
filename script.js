@@ -336,11 +336,11 @@ function generateReferralLink() {
 function shareReferralLink() {
   const referralLink = generateReferralLink();
   
-  // Для Telegram WebApp
-  if (window.Telegram?.WebApp) {
+  // Для Telegram WebApp (встроенный браузер Telegram)
+  if (window.Telegram?.WebApp?.openTelegramLink) {
     try {
-      // Открываем интерфейс отправки сообщения в Telegram
-      Telegram.WebApp.openTelegramLink(`tg://msg_url?url=${encodeURIComponent(referralLink)}`);
+      // Открываем интерфейс отправки сообщения
+      Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`);
       return;
     } catch (e) {
       console.error("Error opening Telegram:", e);
@@ -350,14 +350,28 @@ function shareReferralLink() {
   // Для мобильных устройств (Android/iOS)
   if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
     // Пытаемся открыть в приложении Telegram
-    window.location.href = `tg://msg_url?url=${encodeURIComponent(referralLink)}`;
+    const appLink = `tg://msg_url?url=${encodeURIComponent(referralLink)}`;
+    const webLink = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}`;
+    
+    // Создаем скрытый iframe для открытия appLink
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = appLink;
+    document.body.appendChild(iframe);
+    
+    // Фолбэк: если приложение не открылось, через 300ms открываем веб-версию
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      if (!document.hidden) {
+        window.open(webLink, '_blank');
+      }
+    }, 300);
     return;
   }
 
-  // Для десктопной версии Telegram
+  // Для десктопной версии
   window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`, '_blank');
 }
-
 // ==================== Leaderboard Functions ====================
 
 async function loadLeaderboard() {
