@@ -263,12 +263,9 @@ function updateGemDisplay() {
 
 function initTelegramWebApp() {
   if (window.Telegram?.WebApp) {
-    console.log("Telegram WebApp initialized");
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
     userData = Telegram.WebApp.initDataUnsafe.user;
-  } else {
-    console.log("Telegram WebApp not available");
   }
 }
 
@@ -322,56 +319,40 @@ function updateReferralStats() {
 }
 
 function generateReferralLink() {
-  if (!userId) {
-    console.error("User ID not available");
-    return 'https://t.me/web3quiz_bot';
-  }
-  const link = `https://t.me/web3quiz_bot?start=ref_${userId}`;
-  console.log("Generated referral link:", link);
-  return link;
+  if (!userId) return 'https://t.me/web3quiz_bot';
+  return `https://t.me/web3quiz_bot?start=ref_${userId}`;
 }
-
-// ==================== REFERRAL SHARE FUNCTION ====================
 
 function shareReferralLink() {
-  const referralLink = generateReferralLink();
+  const link = generateReferralLink();
   
-  // Для Telegram WebApp (встроенный браузер Telegram)
-  if (window.Telegram?.WebApp?.openTelegramLink) {
-    try {
-      // Открываем интерфейс отправки сообщения
-      Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`);
-      return;
-    } catch (e) {
-      console.error("Error opening Telegram:", e);
-    }
+  if (window.Telegram?.WebApp) {
+    Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
+  } else if (navigator.share) {
+    navigator.share({
+      title: 'Исламская Викторина',
+      text: 'Проверь свои знания и зарабатывай GEM!',
+      url: link
+    }).catch(() => copyToClipboard(link));
+  } else {
+    copyToClipboard(link);
   }
-  
-  // Для мобильных устройств (Android/iOS)
-  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    // Пытаемся открыть в приложении Telegram
-    const appLink = `tg://msg_url?url=${encodeURIComponent(referralLink)}`;
-    const webLink = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}`;
-    
-    // Создаем скрытый iframe для открытия appLink
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = appLink;
-    document.body.appendChild(iframe);
-    
-    // Фолбэк: если приложение не открылось, через 300ms открываем веб-версию
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-      if (!document.hidden) {
-        window.open(webLink, '_blank');
-      }
-    }, 300);
-    return;
-  }
-
-  // Для десктопной версии
-  window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`, '_blank');
 }
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Ссылка скопирована в буфер обмена!\n' + text);
+  }).catch(() => {
+    const input = document.createElement('input');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    alert('Ссылка скопирована: ' + text);
+  });
+}
+
 // ==================== Leaderboard Functions ====================
 
 async function loadLeaderboard() {
@@ -576,6 +557,8 @@ function setupCopyProtection() {
 
 function subscribeTelegram() {
   window.open("https://t.me/islamskie_viktorini", "_blank");
+  updateScore(10);
+  alert("+10 GEM за подписку!");
 }
 
 function startOneVsOne() {
@@ -584,4 +567,74 @@ function startOneVsOne() {
   setTimeout(() => {
     document.getElementById("status").textContent = "Соперник не найден. Попробуйте позже.";
   }, 5000);
+}
+
+
+
+
+
+function shareReferralLink() {
+  console.log("Функция shareReferralLink вызвана"); // Добавьте эту строку
+  const link = generateReferralLink();
+  console.log("Сгенерированная ссылка:", link); // И эту
+  
+  if (window.Telegram?.WebApp) {
+    console.log("Используем Telegram WebApp.shareUrl");
+    Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
+  } else if (navigator.share) {
+    console.log("Используем Web Share API");
+    navigator.share({
+      title: 'Исламская Викторина',
+      text: 'Проверь свои знания и зарабатывай GEM!',
+      url: link
+    }).catch((error) => {
+      console.error("Ошибка Web Share API:", error);
+      copyToClipboard(link);
+    });
+  } else {
+    console.log("Используем fallback - копирование в буфер");
+    copyToClipboard(link);
+  }
+}
+
+
+function shareReferralLink() {
+  const link = generateReferralLink();
+  
+  try {
+    if (window.Telegram?.WebApp?.shareUrl) {
+      Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
+      return;
+    }
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'Исламская Викторина',
+        text: 'Проверь свои знания и зарабатывай GEM!',
+        url: link
+      }).catch(() => copyToClipboardWithAlert(link));
+      return;
+    }
+
+    // Fallback для всех остальных случаев
+    copyToClipboardWithAlert(link);
+  } catch (e) {
+    console.error("Ошибка при попытке поделиться:", e);
+    copyToClipboardWithAlert(link);
+  }
+}
+
+function copyToClipboardWithAlert(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Ссылка скопирована: ' + text);
+  }).catch(() => {
+    // Fallback для старых браузеров
+    const input = document.createElement('input');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    alert('Ссылка скопирована в буфер: ' + text);
+  });
 }
