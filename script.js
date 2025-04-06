@@ -62,7 +62,14 @@ temporaryQuestions.all = [...temporaryQuestions.quran, ...temporaryQuestions.had
 // Initialize app
 document.addEventListener("DOMContentLoaded", async () => {
   try {
+    console.log("Initializing app...");
     initTelegramWebApp();
+    
+    // Test connection
+    firebase.database().ref('.info/connected').on('value', (snap) => {
+      console.log(snap.val() ? "Connected to Firebase" : "Not connected to Firebase");
+    });
+
     await loadQuestionsFromFirebase();
     await initUserData();
     updateProfile();
@@ -71,14 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     showPage('home');
     setupCopyProtection();
     
-    // Test connection
-    firebase.database().ref('.info/connected').on('value', (snap) => {
-      if (snap.val() === true) {
-        console.log("Connected to Firebase");
-      } else {
-        console.log("Not connected to Firebase");
-      }
-    });
+    console.log("App initialized successfully");
   } catch (error) {
     console.error("Initialization error:", error);
     questionsByCategory = temporaryQuestions;
@@ -89,15 +89,48 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadQuestionsFromFirebase() {
   try {
+    console.log("Loading questions from Firebase...");
     const snapshot = await firebase.database().ref('questions').once('value');
+    
     if (snapshot.exists()) {
-      questionsByCategory = snapshot.val();
+      console.log("Questions loaded from Firebase:", snapshot.val());
+      const firebaseQuestions = snapshot.val();
+      
+      // Merge Firebase questions with temporary questions
+      questionsByCategory = {
+        quran: [...(firebaseQuestions.quran || []), ...(temporaryQuestions.quran || [])],
+        hadisy: [...(firebaseQuestions.hadisy || []), ...(temporaryQuestions.hadisy || [])],
+        history: [...(firebaseQuestions.history || []), ...(temporaryQuestions.history || [])],
+        all: [
+          ...(firebaseQuestions.quran || []),
+          ...(firebaseQuestions.hadisy || []),
+          ...(firebaseQuestions.history || []),
+          ...(temporaryQuestions.quran || []),
+          ...(temporaryQuestions.hadisy || []),
+          ...(temporaryQuestions.history || [])
+        ]
+      };
     } else {
-      questionsByCategory = temporaryQuestions;
+      console.log("No questions in Firebase, using temporary questions");
+      questionsByCategory = {
+        ...temporaryQuestions,
+        all: [
+          ...(temporaryQuestions.quran || []),
+          ...(temporaryQuestions.hadisy || []),
+          ...(temporaryQuestions.history || [])
+        ]
+      };
     }
   } catch (error) {
-    console.error("Load questions error:", error);
-    questionsByCategory = temporaryQuestions;
+    console.error("Error loading questions:", error);
+    questionsByCategory = {
+      ...temporaryQuestions,
+      all: [
+        ...(temporaryQuestions.quran || []),
+        ...(temporaryQuestions.hadisy || []),
+        ...(temporaryQuestions.history || [])
+      ]
+    };
   }
 }
 
@@ -263,9 +296,12 @@ function updateGemDisplay() {
 
 function initTelegramWebApp() {
   if (window.Telegram?.WebApp) {
+    console.log("Telegram WebApp initialized");
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
     userData = Telegram.WebApp.initDataUnsafe.user;
+  } else {
+    console.log("Telegram WebApp not available");
   }
 }
 
@@ -319,38 +355,55 @@ function updateReferralStats() {
 }
 
 function generateReferralLink() {
-  if (!userId) return 'https://t.me/web3quiz_bot';
-  return `https://t.me/web3quiz_bot?start=ref_${userId}`;
+  if (!userId) {
+    console.error("User ID not available");
+    return 'https://t.me/web3quiz_bot';
+  }
+  const link = `https://t.me/web3quiz_bot?start=ref_${userId}`;
+  console.log("Generated referral link:", link);
+  return link;
 }
+
+// ==================== REFERRAL SHARE FUNCTION ====================
 
 function shareReferralLink() {
-  const link = generateReferralLink();
+  const referralLink = generateReferralLink();
   
-  if (window.Telegram?.WebApp) {
-    Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
-  } else if (navigator.share) {
-    navigator.share({
-      title: 'Исламская Викторина',
-      text: 'Проверь свои знания и зарабатывай GEM!',
-      url: link
-    }).catch(() => copyToClipboard(link));
-  } else {
-    copyToClipboard(link);
+  // Для Telegram WebApp (встроенный браузер Telegram)
+  if (window.Telegram?.WebApp?.openTelegramLink) {
+    try {
+      // Открываем интерфейс отправки сообщения
+      Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`);
+      return;
+    } catch (e) {
+      console.error("Error opening Telegram:", e);
+    }
   }
-}
+  
+  // Для мобильных устройств (Android/iOS)
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    // Пытаемся открыть в приложении Telegram
+    const appLink = `tg://msg_url?url=${encodeURIComponent(referralLink)}`;
+    const webLink = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}`;
+    
+    // Создаем скрытый iframe для открытия appLink
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = appLink;
+    document.body.appendChild(iframe);
+    
+    // Фолбэк: если приложение не открылось, через 300ms открываем веб-версию
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      if (!document.hidden) {
+        window.open(webLink, '_blank');
+      }
+    }, 300);
+    return;
+  }
 
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    alert('Ссылка скопирована в буфер обмена!\n' + text);
-  }).catch(() => {
-    const input = document.createElement('input');
-    input.value = text;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand('copy');
-    document.body.removeChild(input);
-    alert('Ссылка скопирована: ' + text);
-  });
+  // Для десктопной версии
+  window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`, '_blank');
 }
 
 // ==================== Leaderboard Functions ====================
@@ -557,8 +610,6 @@ function setupCopyProtection() {
 
 function subscribeTelegram() {
   window.open("https://t.me/islamskie_viktorini", "_blank");
-  updateScore(10);
-  alert("+10 GEM за подписку!");
 }
 
 function startOneVsOne() {
@@ -567,74 +618,4 @@ function startOneVsOne() {
   setTimeout(() => {
     document.getElementById("status").textContent = "Соперник не найден. Попробуйте позже.";
   }, 5000);
-}
-
-
-
-
-
-function shareReferralLink() {
-  console.log("Функция shareReferralLink вызвана"); // Добавьте эту строку
-  const link = generateReferralLink();
-  console.log("Сгенерированная ссылка:", link); // И эту
-  
-  if (window.Telegram?.WebApp) {
-    console.log("Используем Telegram WebApp.shareUrl");
-    Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
-  } else if (navigator.share) {
-    console.log("Используем Web Share API");
-    navigator.share({
-      title: 'Исламская Викторина',
-      text: 'Проверь свои знания и зарабатывай GEM!',
-      url: link
-    }).catch((error) => {
-      console.error("Ошибка Web Share API:", error);
-      copyToClipboard(link);
-    });
-  } else {
-    console.log("Используем fallback - копирование в буфер");
-    copyToClipboard(link);
-  }
-}
-
-
-function shareReferralLink() {
-  const link = generateReferralLink();
-  
-  try {
-    if (window.Telegram?.WebApp?.shareUrl) {
-      Telegram.WebApp.shareUrl(link, "Присоединяйся к Исламской Викторине!");
-      return;
-    }
-
-    if (navigator.share) {
-      navigator.share({
-        title: 'Исламская Викторина',
-        text: 'Проверь свои знания и зарабатывай GEM!',
-        url: link
-      }).catch(() => copyToClipboardWithAlert(link));
-      return;
-    }
-
-    // Fallback для всех остальных случаев
-    copyToClipboardWithAlert(link);
-  } catch (e) {
-    console.error("Ошибка при попытке поделиться:", e);
-    copyToClipboardWithAlert(link);
-  }
-}
-
-function copyToClipboardWithAlert(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    alert('Ссылка скопирована: ' + text);
-  }).catch(() => {
-    // Fallback для старых браузеров
-    const input = document.createElement('input');
-    input.value = text;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand('copy');
-    document.body.removeChild(input);
-    alert('Ссылка скопирована в буфер: ' + text);
-  });
 }
