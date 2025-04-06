@@ -289,7 +289,7 @@
   .action-btn {
     width: 100%;
     padding: 12px;
-    background: linear-gradient(135deg, #2395FF, #42326C);
+    background: linear-gradient(135deg, #42326C, #160033);
     color: #E7BB4C;
     border: 1px solid #E7BB4C;
     border-radius: 8px;
@@ -300,15 +300,15 @@
   }
   
   .action-btn:hover {
-    background: #2395FF;
+    background: #5D3A8E;
   }
   
   .blue-card {
-    background: linear-gradient(135deg, #2395FF, #42326C);
+    background: linear-gradient(135deg, #42326C, #160033);
   }
   
   .purple-card {
-    background: linear-gradient(135deg, #2395FF, #42326C);
+    background: linear-gradient(135deg, #42326C, #160033);
   }
   
   .action-cards {

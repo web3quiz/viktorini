@@ -589,14 +589,5 @@ function copyToClipboard(link, message) {
   });
 }
 
-// Генерация реферальной ссылки
-function generateReferralLink() {
-  if (!userId) return 'https://t.me/web3quiz_bot';
-  
-  // Для Telegram
-  if (window.Telegram && window.Telegram.WebApp) {
-    return `https://t.me/web3quiz_bot?start=ref_${userId}`;
-  }
 
-}
 
