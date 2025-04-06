@@ -561,16 +561,10 @@ function shareReferralLink() {
   if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
     // Попробуем открыть Telegram
     window.open(`tg://msg?text=${encodeURIComponent(message)}`, '_blank');
-    
-    // Фолбэк для iOS
-    setTimeout(() => {
-      if (document.hidden) return;
-      window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
-    }, 200);
   }
-  
-  
 }
+
+
 
 // Улучшенная функция копирования с сообщением
 function copyToClipboard(link, message) {
@@ -603,8 +597,6 @@ function generateReferralLink() {
   if (window.Telegram && window.Telegram.WebApp) {
     return `https://t.me/web3quiz_bot?start=ref_${userId}`;
   }
-  
-  // Для других платформ
-  return `${window.location.origin}?ref=${userId}`;
+
 }
 
