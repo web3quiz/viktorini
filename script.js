@@ -331,8 +331,32 @@ function generateReferralLink() {
   return link;
 }
 
+// ==================== REFERRAL SHARE FUNCTION ====================
 
+function shareReferralLink() {
+  const referralLink = generateReferralLink();
+  
+  // Для Telegram WebApp
+  if (window.Telegram?.WebApp) {
+    try {
+      // Открываем интерфейс отправки сообщения в Telegram
+      Telegram.WebApp.openTelegramLink(`tg://msg_url?url=${encodeURIComponent(referralLink)}`);
+      return;
+    } catch (e) {
+      console.error("Error opening Telegram:", e);
+    }
+  }
+  
+  // Для мобильных устройств (Android/iOS)
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    // Пытаемся открыть в приложении Telegram
+    window.location.href = `tg://msg_url?url=${encodeURIComponent(referralLink)}`;
+    return;
+  }
 
+  // Для десктопной версии Telegram
+  window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`, '_blank');
+}
 
 // ==================== Leaderboard Functions ====================
 
@@ -538,7 +562,6 @@ function setupCopyProtection() {
 
 function subscribeTelegram() {
   window.open("https://t.me/islamskie_viktorini", "_blank");
-
 }
 
 function startOneVsOne() {
@@ -548,46 +571,3 @@ function startOneVsOne() {
     document.getElementById("status").textContent = "Соперник не найден. Попробуйте позже.";
   }, 5000);
 }
-
-
-
-// ==================== REFERRAL SHARE FUNCTION ====================
-
-function shareReferralLink() {
-  const referralLink = generateReferralLink();
-  const message = `Присоединяйся к Исламской Викторине! 🕌\nПроверь свои знания и зарабатывай GEM!\n\nПереходи по этой ссылке: ${referralLink}\n\n#Ислам #Викторина #Quiz`;
-  
-  // Для мобильных устройств (Android/iOS)
-  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    // Попробуем открыть Telegram
-    window.open(`tg://msg?text=${encodeURIComponent(message)}`, '_blank');
-  }
-}
-
-
-
-// Улучшенная функция копирования с сообщением
-function copyToClipboard(link, message) {
-  navigator.clipboard.writeText(message || link).then(() => {
-    alert('Реферальная ссылка скопирована! Вставьте её в любой мессенджер:\n\n' + link);
-  }).catch(() => {
-    // Fallback для старых браузеров
-    const textarea = document.createElement('textarea');
-    textarea.value = message || link;
-    textarea.style.position = 'fixed';
-    document.body.appendChild(textarea);
-    textarea.select();
-    
-    try {
-      document.execCommand('copy');
-      alert('Ссылка скопирована! Вставьте её в любой мессенджер:\n\n' + link);
-    } catch (err) {
-      alert('Не удалось скопировать ссылку. Скопируйте вручную:\n\n' + link);
-    }
-    
-    document.body.removeChild(textarea);
-  });
-}
-
-
-
