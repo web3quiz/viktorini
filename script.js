@@ -21,6 +21,7 @@ let shuffledQuestions = [];
 let userData = null;
 let userId = null;
 let referralCount = parseInt(localStorage.getItem("referralCount")) || 0;
+let currentCategory = ''; // Добавлено для отслеживания текущей категории
 let questionsByCategory = {
   quran: [],
   hadisy: [],
@@ -208,8 +209,26 @@ function startQuiz(category) {
     alert("Вопросы загружаются, попробуйте позже");
     return;
   }
+  
+  // Сохраняем текущую категорию
+  currentCategory = category;
+  
+  // Если категория изменилась, сбрасываем индекс
+  const lastCategory = localStorage.getItem("lastCategory");
+  if (lastCategory !== category) {
+    currentQuestionIndex = 0;
+    localStorage.removeItem(`lastQuestionIndex_${lastCategory}`);
+  }
+  
+  // Загружаем сохраненный индекс для текущей категории
+  const savedIndex = parseInt(localStorage.getItem(`lastQuestionIndex_${category}`)) || 0;
+  
   shuffledQuestions = [...questionsByCategory[category]];
-  currentQuestionIndex = 0;
+  currentQuestionIndex = savedIndex >= shuffledQuestions.length ? 0 : savedIndex;
+  
+  // Сохраняем текущую категорию
+  localStorage.setItem("lastCategory", category);
+  
   showPage('quiz');
   loadQuestion();
 }
@@ -217,7 +236,6 @@ function startQuiz(category) {
 function loadQuestion() {
   if (currentQuestionIndex >= shuffledQuestions.length) {
     currentQuestionIndex = 0;
-    shuffledQuestions = shuffleArray(shuffledQuestions);
   }
 
   const questionElement = document.getElementById("question");
@@ -272,6 +290,16 @@ function checkAnswer(index) {
 
 function loadNextQuestion() {
   currentQuestionIndex++;
+  
+  // Сохраняем текущий индекс вопроса для категории
+  localStorage.setItem(`lastQuestionIndex_${currentCategory}`, currentQuestionIndex);
+  
+  // Если дошли до конца, начинаем сначала
+  if (currentQuestionIndex >= shuffledQuestions.length) {
+    currentQuestionIndex = 0;
+    localStorage.setItem(`lastQuestionIndex_${currentCategory}`, 0);
+  }
+  
   loadQuestion();
 }
 
