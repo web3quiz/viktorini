@@ -62,14 +62,7 @@ temporaryQuestions.all = [...temporaryQuestions.quran, ...temporaryQuestions.had
 // Initialize app
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    console.log("Initializing app...");
     initTelegramWebApp();
-    
-    // Test connection
-    firebase.database().ref('.info/connected').on('value', (snap) => {
-      console.log(snap.val() ? "Connected to Firebase" : "Not connected to Firebase");
-    });
-
     await loadQuestionsFromFirebase();
     await initUserData();
     updateProfile();
@@ -78,7 +71,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     showPage('home');
     setupCopyProtection();
     
-    console.log("App initialized successfully");
+    // Test connection
+    firebase.database().ref('.info/connected').on('value', (snap) => {
+      if (snap.val() === true) {
+        console.log("Connected to Firebase");
+      } else {
+        console.log("Not connected to Firebase");
+      }
+    });
   } catch (error) {
     console.error("Initialization error:", error);
     questionsByCategory = temporaryQuestions;
@@ -89,48 +89,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadQuestionsFromFirebase() {
   try {
-    console.log("Loading questions from Firebase...");
     const snapshot = await firebase.database().ref('questions').once('value');
-    
     if (snapshot.exists()) {
-      console.log("Questions loaded from Firebase:", snapshot.val());
-      const firebaseQuestions = snapshot.val();
-      
-      // Merge Firebase questions with temporary questions
-      questionsByCategory = {
-        quran: [...(firebaseQuestions.quran || []), ...(temporaryQuestions.quran || [])],
-        hadisy: [...(firebaseQuestions.hadisy || []), ...(temporaryQuestions.hadisy || [])],
-        history: [...(firebaseQuestions.history || []), ...(temporaryQuestions.history || [])],
-        all: [
-          ...(firebaseQuestions.quran || []),
-          ...(firebaseQuestions.hadisy || []),
-          ...(firebaseQuestions.history || []),
-          ...(temporaryQuestions.quran || []),
-          ...(temporaryQuestions.hadisy || []),
-          ...(temporaryQuestions.history || [])
-        ]
-      };
+      questionsByCategory = snapshot.val();
     } else {
-      console.log("No questions in Firebase, using temporary questions");
-      questionsByCategory = {
-        ...temporaryQuestions,
-        all: [
-          ...(temporaryQuestions.quran || []),
-          ...(temporaryQuestions.hadisy || []),
-          ...(temporaryQuestions.history || [])
-        ]
-      };
+      questionsByCategory = temporaryQuestions;
     }
   } catch (error) {
-    console.error("Error loading questions:", error);
-    questionsByCategory = {
-      ...temporaryQuestions,
-      all: [
-        ...(temporaryQuestions.quran || []),
-        ...(temporaryQuestions.hadisy || []),
-        ...(temporaryQuestions.history || [])
-      ]
-    };
+    console.error("Load questions error:", error);
+    questionsByCategory = temporaryQuestions;
   }
 }
 
@@ -405,7 +372,6 @@ function shareReferralLink() {
   // Для десктопной версии
   window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`, '_blank');
 }
-
 // ==================== Leaderboard Functions ====================
 
 async function loadLeaderboard() {
