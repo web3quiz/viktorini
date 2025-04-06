@@ -94,23 +94,43 @@ async function loadQuestionsFromFirebase() {
     
     if (snapshot.exists()) {
       console.log("Questions loaded from Firebase:", snapshot.val());
-      questionsByCategory = snapshot.val();
+      const firebaseQuestions = snapshot.val();
       
-      // Ensure 'all' category exists
-      if (!questionsByCategory.all) {
-        questionsByCategory.all = [
-          ...(questionsByCategory.quran || []),
-          ...(questionsByCategory.hadisy || []),
-          ...(questionsByCategory.history || [])
-        ];
-      }
+      // Merge Firebase questions with temporary questions
+      questionsByCategory = {
+        quran: [...(firebaseQuestions.quran || []), ...(temporaryQuestions.quran || [])],
+        hadisy: [...(firebaseQuestions.hadisy || []), ...(temporaryQuestions.hadisy || [])],
+        history: [...(firebaseQuestions.history || []), ...(temporaryQuestions.history || [])],
+        all: [
+          ...(firebaseQuestions.quran || []),
+          ...(firebaseQuestions.hadisy || []),
+          ...(firebaseQuestions.history || []),
+          ...(temporaryQuestions.quran || []),
+          ...(temporaryQuestions.hadisy || []),
+          ...(temporaryQuestions.history || [])
+        ]
+      };
     } else {
       console.log("No questions in Firebase, using temporary questions");
-      questionsByCategory = temporaryQuestions;
+      questionsByCategory = {
+        ...temporaryQuestions,
+        all: [
+          ...(temporaryQuestions.quran || []),
+          ...(temporaryQuestions.hadisy || []),
+          ...(temporaryQuestions.history || [])
+        ]
+      };
     }
   } catch (error) {
     console.error("Error loading questions:", error);
-    questionsByCategory = temporaryQuestions;
+    questionsByCategory = {
+      ...temporaryQuestions,
+      all: [
+        ...(temporaryQuestions.quran || []),
+        ...(temporaryQuestions.hadisy || []),
+        ...(temporaryQuestions.history || [])
+      ]
+    };
   }
 }
 
