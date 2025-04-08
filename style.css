@@ -1,743 +1,808 @@
 /* Основные стили */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    user-select: none;
-    -webkit-user-select: none;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #160033;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+.page {
+  display: none;
+  padding: 20px;
+  min-height: calc(100vh - 80px);
+}
+
+.page.active {
+  display: block;
+}
+
+/* Скрытие scrollbar */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Кнопки */
+button {
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.big-button, .category-button {
+  width: 80%;
+  max-width: 400px;
+  padding: 20px;
+  font-size: 20px;
+  background-color: #5D3A8E;
+  color: white;
+  border-radius: 15px;
+  margin: 10px 0;
+}
+
+.big-button:hover, .category-button:hover {
+  background-color: #42326C;
+  transform: translateY(-3px);
+}
+
+.big-button:active, .category-button:active {
+  transform: translateY(0);
+}
+
+/* Навигация */
+.navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: 15px 0;
+  background-color: #160033;
+  z-index: 1000;
+}
+
+.nav-button {
+  background: none;
+  border: none;
+  padding: 5px;
+}
+
+.nav-button img {
+  width: 24px;
+  height: 24px;
+}
+
+.nav-button.active {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.nav-button:not(.active) img {
+  opacity: 0.6;
+  filter: brightness(0.7) invert(0.7);
+}
+
+.nav-button:not(.active):hover img {
+  opacity: 0.8;
+}
+
+/* Профиль */
+.profile-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.profile-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid #E7BB4C;
+  object-fit: cover;
+}
+
+.profile-name {
+  font-weight: 600;
+}
+
+.profile-gem {
+  color: #E7BB4C;
+  font-weight: 600;
+}
+
+/* Викторина */
+.quiz-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.question {
+  font-size: 24px;
+  margin-bottom: 30px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.question.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.answers {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.answer-button {
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 10px;
+  font-size: 18px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+}
+
+.answer-button.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.answer-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.next-question {
+  padding: 15px 30px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 10px;
+  font-size: 18px;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.3s ease;
+}
+
+.next-question.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.next-question:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.correct {
+  background-color: #4CAF50 !important;
+  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.5);
+}
+
+.incorrect {
+  background-color: #D2238F !important;
+  box-shadow: 0 4px 10px rgba(244, 67, 54, 0.5);
+}
+
+/* Кнопка назад */
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.back-button img {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(1);
+}
+
+/* Карточки */
+.about-card, .action-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 25px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 500px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.about-card {
+  text-align: center;
+}
+
+.about-card h2 {
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.action-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.action-card .card-icon {
+  font-size: 32px;
+  margin-bottom: 15px;
+}
+
+.action-card h3 {
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.action-card p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #42326C, #160033);
+  color: #E7BB4C;
+  border: 1px solid #E7BB4C;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-size: 1.0rem;
+}
+
+.action-btn:hover {
+  background: #5D3A8E;
+}
+
+.blue-card {
+  background: linear-gradient(135deg, #42326C, #160033);
+}
+
+.purple-card {
+  background: linear-gradient(135deg, #42326C, #160033);
+}
+
+.action-cards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin: 25px 0;
+}
+
+/* Категории */
+.categories-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.category-button {
+  width: 90%;
+  max-width: 350px;
+}
+
+/* Статистика */
+.stats-container {
+  display: flex;
+  justify-content: space-around;
+  margin: 20px 0;
+}
+
+.stat-box {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+  flex: 1;
+  max-width: 45%;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: bold;
+  color: #E7BB4C;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 5px;
+}
+
+/* Магазин */
+.shop-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.book-item {
+  width: 100%;
+  height: 300px;
+  position: relative;
+  perspective: 1000px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.book-front, .book-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  transition: transform 0.6s ease;
+}
+
+.book-front {
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotateY(0deg);
+}
+
+.book-back {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotateY(180deg);
+}
+
+.book-item.flipped .book-front {
+  transform: rotateY(180deg);
+}
+
+.book-item.flipped .book-back {
+  transform: rotateY(0deg);
+}
+
+.book-front img {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+}
+
+.book-front h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.price {
+  color: #E7BB4C;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.book-front button {
+  padding: 8px 16px;
+  background: #E7BB4C;
+  border: none;
+  border-radius: 5px;
+  color: #160033;
+  font-weight: bold;
+}
+
+.book-back p {
+  text-align: center;
+  padding: 0 10px;
+}
+
+/* Таблица лидеров */
+#leaders-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 60px;
+}
+
+#leaderboard {
+  width: 100%;
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 0 15px;
+  list-style: none;
+}
+
+#leaderboard li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+#leaderboard li:hover {
+  transform: translateX(5px);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.leader-position {
+  font-weight: bold;
+  color: #E7BB4C;
+  font-size: 18px;
+  min-width: 30px;
+}
+
+.leader-name {
+  flex-grow: 1;
+  margin: 0 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leader-score {
+  background: #5D3A8E;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Стили для топ-3 позиций */
+#leaderboard li:nth-child(1) .leader-position {
+  color: #FFD700;
+  font-size: 20px;
+}
+
+#leaderboard li:nth-child(2) .leader-position {
+  color: #C0C0C0;
+  font-size: 19px;
+}
+
+#leaderboard li:nth-child(3) .leader-position {
+  color: #CD7F32;
+  font-size: 18px;
+}
+
+.leaderboard-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 500px;
+  padding: 0 25px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Состояния таблицы лидеров */
+.loading, .no-data, .error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 10px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #E7BB4C;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.error button {
+  background: #5D3A8E;
+  border: none;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.no-data img, .error img {
+  width: 24px;
+  height: 24px;
+}
+
+/* Модальное окно */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: #160033;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+}
+
+.close-modal {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid #E7BB4C;
+  object-fit: cover;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+  .question {
+      font-size: 20px;
   }
   
-  body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #160033;
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-  
-  .container {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    position: relative;
-    min-height: 100vh;
-    padding-bottom: 80px;
-  }
-  
-  .page {
-    display: none;
-    padding: 20px;
-    min-height: calc(100vh - 80px);
-  }
-  
-  .page.active {
-    display: block;
-  }
-  
-  /* Скрытие scrollbar */
-  body::-webkit-scrollbar {
-    display: none;
-  }
-  
-  body {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  /* Кнопки */
-  button {
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
+  .answer-button, .next-question {
+      font-size: 16px;
+      padding: 12px;
   }
   
   .big-button, .category-button {
-    width: 80%;
-    max-width: 400px;
-    padding: 20px;
-    font-size: 20px;
-    background-color: #5D3A8E;
-    color: white;
-    border-radius: 15px;
-    margin: 10px 0;
-  }
-  
-  .big-button:hover, .category-button:hover {
-    background-color: #42326C;
-    transform: translateY(-3px);
-  }
-  
-  .big-button:active, .category-button:active {
-    transform: translateY(0);
-  }
-  
-  /* Навигация */
-  .navigation {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-around;
-    padding: 15px 0;
-    background-color: #160033;
-    z-index: 1000;
-  }
-  
-  .nav-button {
-    background: none;
-    border: none;
-    padding: 5px;
-  }
-  
-  .nav-button img {
-    width: 24px;
-    height: 24px;
-  }
-  
-  .nav-button.active {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-  }
-  
-  .nav-button:not(.active) img {
-    opacity: 0.6;
-    filter: brightness(0.7) invert(0.7);
-  }
-  
-  .nav-button:not(.active):hover img {
-    opacity: 0.8;
-  }
-  
-  /* Профиль */
-  .profile-info {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  
-  .profile-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 2px solid #E7BB4C;
-    object-fit: cover;
-  }
-  
-  .profile-name {
-    font-weight: 600;
-  }
-  
-  .profile-gem {
-    color: #E7BB4C;
-    font-weight: 600;
-  }
-  
-  /* Викторина */
-  .quiz-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 20px;
-  }
-  
-  .question {
-    font-size: 24px;
-    margin-bottom: 30px;
-    text-align: center;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  
-  .question.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  
-  .answers {
-    width: 100%;
-    max-width: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  
-  .answer-button {
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    border-radius: 10px;
-    font-size: 18px;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.3s ease;
-  }
-  
-  .answer-button.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  
-  .answer-button:hover {
-    background: rgba(255, 255, 255, 0.15);
-  }
-  
-  .next-question {
-    padding: 15px 30px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    border-radius: 10px;
-    font-size: 18px;
-    opacity: 0;
-    transform: scale(0.9);
-    transition: all 0.3s ease;
-  }
-  
-  .next-question.show {
-    opacity: 1;
-    transform: scale(1);
-  }
-  
-  .next-question:hover {
-    background: rgba(255, 255, 255, 0.15);
-  }
-  
-  .correct {
-    background-color: #4CAF50 !important;
-    box-shadow: 0 4px 10px rgba(76, 175, 80, 0.5);
-  }
-  
-  .incorrect {
-    background-color: #D2238F !important;
-    box-shadow: 0 4px 10px rgba(244, 67, 54, 0.5);
-  }
-  
-  /* Кнопка назад */
-  .back-button {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: none;
-    border: none;
-    padding: 0;
-  }
-  
-  .back-button img {
-    width: 24px;
-    height: 24px;
-    filter: brightness(0) invert(1);
-  }
-  
-  /* Карточки */
-  .about-card, .action-card {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 25px;
-    margin-bottom: 20px;
-    width: 100%;
-    max-width: 500px;
-    box-sizing: border-box;
-    transition: all 0.3s ease;
-  }
-  
-  .about-card {
-    text-align: center;
-  }
-  
-  .about-card h2 {
-    margin-bottom: 15px;
-    font-size: 1.3rem;
-  }
-  
-  .action-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .action-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  }
-  
-  .action-card .card-icon {
-    font-size: 32px;
-    margin-bottom: 15px;
-  }
-  
-  .action-card h3 {
-    margin-bottom: 10px;
-    font-size: 1.2rem;
-  }
-  
-  .action-card p {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
-    margin-bottom: 20px;
-  }
-  
-  .action-btn {
-    width: 100%;
-    padding: 12px;
-    background: linear-gradient(135deg, #42326C, #160033);
-    color: #E7BB4C;
-    border: 1px solid #E7BB4C;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    font-size: 1.0rem;
-  }
-  
-  .action-btn:hover {
-    background: #5D3A8E;
-  }
-  
-  .blue-card {
-    background: linear-gradient(135deg, #42326C, #160033);
-  }
-  
-  .purple-card {
-    background: linear-gradient(135deg, #42326C, #160033);
-  }
-  
-  .action-cards {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    margin: 25px 0;
-  }
-  
-  /* Категории */
-  .categories-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    margin-top: 20px;
-  }
-  
-  .category-button {
-    width: 90%;
-    max-width: 350px;
-  }
-  
-  /* Статистика */
-  .stats-container {
-    display: flex;
-    justify-content: space-around;
-    margin: 20px 0;
-  }
-  
-  .stat-box {
-    text-align: center;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    padding: 15px;
-    flex: 1;
-    max-width: 45%;
-  }
-  
-  .stat-number {
-    font-size: 24px;
-    font-weight: bold;
-    color: #E7BB4C;
-  }
-  
-  .stat-label {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 5px;
-  }
-  
-  /* Магазин */
-  .shop-container {
-    padding: 20px;
-    max-width: 800px;
-    margin: 0 auto;
+      font-size: 18px;
+      padding: 15px;
   }
   
   .shop-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
+      grid-template-columns: 1fr;
   }
   
   .book-item {
-    width: 100%;
-    height: 300px;
-    position: relative;
-    perspective: 1000px;
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  
-  .book-front, .book-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 15px;
-    transition: transform 0.6s ease;
-  }
-  
-  .book-front {
-    background: rgba(255, 255, 255, 0.1);
-    transform: rotateY(0deg);
-  }
-  
-  .book-back {
-    background: rgba(255, 255, 255, 0.2);
-    transform: rotateY(180deg);
-  }
-  
-  .book-item.flipped .book-front {
-    transform: rotateY(180deg);
-  }
-  
-  .book-item.flipped .book-back {
-    transform: rotateY(0deg);
-  }
-  
-  .book-front img {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 10px;
-  }
-  
-  .book-front h3 {
-    font-size: 16px;
-    margin-bottom: 10px;
-    text-align: center;
-  }
-  
-  .price {
-    color: #E7BB4C;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-  
-  .book-front button {
-    padding: 8px 16px;
-    background: #E7BB4C;
-    border: none;
-    border-radius: 5px;
-    color: #160033;
-    font-weight: bold;
-  }
-  
-  .book-back p {
-    text-align: center;
-    padding: 0 10px;
-  }
-  
-  /* Таблица лидеров */
-  #leaders-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 60px;
-  }
-  
-  #leaderboard {
-    width: 100%;
-    max-width: 500px;
-    margin: 20px auto;
-    padding: 0 15px;
-    list-style: none;
+      height: 250px;
   }
   
   #leaderboard li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    margin-bottom: 10px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    transition: transform 0.3s ease;
-  }
-  
-  #leaderboard li:hover {
-    transform: translateX(5px);
-    background: rgba(255, 255, 255, 0.12);
-  }
-  
-  .leader-position {
-    font-weight: bold;
-    color: #E7BB4C;
-    font-size: 18px;
-    min-width: 30px;
+      padding: 12px 15px;
   }
   
   .leader-name {
-    flex-grow: 1;
-    margin: 0 15px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+      font-size: 14px;
   }
   
   .leader-score {
-    background: #5D3A8E;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 14px;
-  }
-  
-  /* Стили для топ-3 позиций */
-  #leaderboard li:nth-child(1) .leader-position {
-    color: #FFD700;
-    font-size: 20px;
-  }
-  
-  #leaderboard li:nth-child(2) .leader-position {
-    color: #C0C0C0;
-    font-size: 19px;
-  }
-  
-  #leaderboard li:nth-child(3) .leader-position {
-    color: #CD7F32;
-    font-size: 18px;
-  }
-  
-  .leaderboard-header {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 500px;
-    padding: 0 25px;
-    margin-bottom: 10px;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.7);
-  }
-  
-  /* Состояния таблицы лидеров */
-  .loading, .no-data, .error {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    gap: 10px;
-  }
-  
-  .loading-spinner {
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,0.3);
-    border-radius: 50%;
-    border-top-color: #E7BB4C;
-    animation: spin 1s ease-in-out infinite;
-  }
-  
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
-  .error div {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-  }
-  
-  .error button {
-    background: #5D3A8E;
-    border: none;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  .no-data img, .error img {
-    width: 24px;
-    height: 24px;
-  }
-  
-  /* Модальное окно */
-  .modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-  }
-  
-  .modal-content {
-    background: #160033;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 400px;
-    position: relative;
-  }
-  
-  .close-modal {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 24px;
-    cursor: pointer;
-  }
-  
-  .profile-details {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .modal-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    border: 2px solid #E7BB4C;
-    object-fit: cover;
-  }
-  
-  /* Адаптивность */
-  @media (max-width: 600px) {
-    .question {
-      font-size: 20px;
-    }
-    
-    .answer-button, .next-question {
-      font-size: 16px;
-      padding: 12px;
-    }
-    
-    .big-button, .category-button {
-      font-size: 18px;
-      padding: 15px;
-    }
-    
-    .shop-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .book-item {
-      height: 250px;
-    }
-    
-    #leaderboard li {
-      padding: 12px 15px;
-    }
-    
-    .leader-name {
-      font-size: 14px;
-    }
-    
-    .leader-score {
       padding: 4px 10px;
       font-size: 13px;
-    }
   }
-  
-  /* Центрирование страниц */
-  #home-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding-top: 20px;
-    padding-bottom: 20px;
-  }
-  
-  #quiz-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .quiz-container {
-    width: 100%;
-    max-width: 500px;
-  }
+}
 
+/* Центрирование страниц */
+#home-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
 
-  /* Добавьте эти стили в конец файла style.css */
+#quiz-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.quiz-container {
+  width: 100%;
+  max-width: 500px;
+}
 
 /* Заголовки страниц */
 .page h1 {
-    text-align: center;
-    margin-top: 20px;
-    margin-bottom: 30px;
-    position: sticky;
-    top: 0;
-    background-color: #160033;
-    padding: 15px 0;
-    z-index: 100;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* Уменьшим отступы для страниц с фиксированными заголовками */
-  .page {
-    padding-top: 0;
-  }
-  
-  /* Особые стили для главной страницы */
-  #home-page {
-    padding-top: 20px;
-  }
-  
-  /* Подвинем контент страниц ниже заголовков */
-  .quiz-container,
-  .categories-container,
-  .about-container,
-  .shop-container,
-  #leaderboard {
-    margin-top: 60px;
-  }
-  
-  /* Подвинем кнопку назад выше */
-  .back-button {
-    position: fixed;
-    top: 25px;
-    left: 15px;
-    z-index: 200;
-  }
-  
-  /* Для страницы 1vs1 */
-  #one-vs-one-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  #one-vs-one-page h1 {
-    position: static;
-    margin-top: 60px;
-  }
-  
-  #status {
-    margin-top: 20px;
-    text-align: center;
-  }
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 30px;
+  position: sticky;
+  top: 0;
+  background-color: #160033;
+  padding: 15px 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Уменьшим отступы для страниц с фиксированными заголовками */
+.page {
+  padding-top: 0;
+}
+
+/* Особые стили для главной страницы */
+#home-page {
+  padding-top: 20px;
+}
+
+/* Подвинем контент страниц ниже заголовков */
+.quiz-container,
+.categories-container,
+.about-container,
+.shop-container,
+#leaderboard {
+  margin-top: 60px;
+}
+
+/* Подвинем кнопку назад выше */
+.back-button {
+  position: fixed;
+  top: 25px;
+  left: 15px;
+  z-index: 200;
+}
+
+/* Стили для мультиплеера */
+#multiplayer-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 60px;
+}
+
+.multiplayer-container {
+  width: 100%;
+  max-width: 500px;
+}
+
+#players-list {
+  margin: 20px 0;
+  width: 100%;
+}
+
+.player-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 20px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.player-name {
+  font-weight: 500;
+}
+
+.player-status {
+  color: #E7BB4C;
+}
+
+#startGameBtn {
+  margin-top: 20px;
+}
+
+.timer {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin: 20px 0;
+  color: #E7BB4C;
+}
+
+#scoreboard {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.result-item .position {
+  font-weight: bold;
+  width: 30px;
+}
+
+.result-item .name {
+  flex-grow: 1;
+  margin: 0 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-item .score {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.result-item .prize {
+  color: #E7BB4C;
+  font-weight: bold;
+  margin-left: 15px;
+}

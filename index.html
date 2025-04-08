@@ -22,7 +22,7 @@
             <h1 class="title">Исламские Викторины</h1>
             <div class="main-buttons">
                 <button class="big-button" onclick="showPage('categories')">Викторина</button>
-                <button class="big-button" onclick="startOneVsOne()">Игра 1vs1</button>
+                <button class="big-button" onclick="startMultiplayer()">Мультиплеер (5 игроков)</button>
             </div>
         </div>
 
@@ -40,13 +40,25 @@
             </div>
         </div>
 
-        <!-- Страница 1vs1 -->
-        <div id="one-vs-one-page" class="page">
+        <!-- Страница мультиплеера -->
+        <div id="multiplayer-page" class="page">
             <button class="back-button" onclick="showPage('home')">
                 <img src="icons/back.svg" alt="Назад">
             </button>
-            <h1>Игра 1 vs 1</h1>
-            <p id="status">Ожидание соперника...</p>
+            <h1>Мультиплеер</h1>
+            <div class="multiplayer-container">
+                <div id="lobby">
+                    <p id="status">Ожидание игроков... (1/5)</p>
+                    <div id="players-list"></div>
+                    <button class="big-button" id="startGameBtn" style="display: none;" onclick="startMultiplayerGame()">Начать игру</button>
+                </div>
+                <div id="game" style="display: none;">
+                    <div class="question" id="mp-question"></div>
+                    <div class="timer" id="timer">30</div>
+                    <div class="answers" id="mp-answers"></div>
+                    <div id="scoreboard"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Страница викторины -->
@@ -70,16 +82,13 @@
             <h1>Пригласить друзей</h1>
             <div class="about-container">
                 <div class="about-content">
-                    
                     <div class="action-cards">
                         <div class="action-card blue-card">
-                            
                             <h3>Пригласите друзей</h3>
                             <p>Получите 100 GEM за каждого</p>
                             <button class="action-btn" onclick="shareReferralLink()">Пригласить</button>
                         </div>
                         <div class="action-card purple-card">
-                            
                             <h3>Подпишитесь на Telegram</h3>
                             <p>Исламские Викторины</p>
                             <button class="action-btn" onclick="subscribeTelegram()">Подписаться</button>
@@ -99,18 +108,18 @@
             </div>
         </div>
 
-       <!-- Таблица лидеров -->
-<div id="leaders-page" class="page">
-    <button class="back-button" onclick="showPage('home')">
-        <img src="icons/back.svg" alt="Назад">
-    </button>
-    <h1>Таблица лидеров</h1>
-    <div class="leaderboard-header">
-        <span>Игрок</span>
-        <span>Очки</span>
-    </div>
-    <ul id="leaderboard"></ul>
-</div>
+        <!-- Таблица лидеров -->
+        <div id="leaders-page" class="page">
+            <button class="back-button" onclick="showPage('home')">
+                <img src="icons/back.svg" alt="Назад">
+            </button>
+            <h1>Таблица лидеров</h1>
+            <div class="leaderboard-header">
+                <span>Игрок</span>
+                <span>Очки</span>
+            </div>
+            <ul id="leaderboard"></ul>
+        </div>
 
         <!-- Магазин -->
         <div id="shop-page" class="page">
