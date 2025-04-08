@@ -370,7 +370,7 @@ function createRoom(roomId) {
     
     // Начинаем слушать изменения в комнате
     setupRoomListeners(roomId);
-    updateStatus("Комната создана. Ожидание игроков... (1/5)");
+    updateStatus("Комната создана. Ожидание игроков... (1/2)");
 }
 
 function joinRoom(roomId) {
@@ -403,10 +403,10 @@ function setupRoomListeners(roomId) {
         
         // Обновляем UI
         updatePlayerList(multiplayerState.players);
-        updateStatus(`Ожидание игроков... (${multiplayerState.currentPlayerCount}/5)`);
+        updateStatus(`Ожидание игроков... (${multiplayerState.currentPlayerCount}/2)`);
         
-        // Показываем кнопку "Начать игру" только для хоста, когда набралось 5 игроков
-        if (multiplayerState.isHost && multiplayerState.currentPlayerCount >= 5 && !multiplayerState.gameStarted) {
+        // Показываем кнопку "Начать игру" только для хоста, когда набралось 2 игроков
+        if (multiplayerState.isHost && multiplayerState.currentPlayerCount >= 2 && !multiplayerState.gameStarted) {
             document.getElementById('startGameBtn').style.display = 'block';
         } else {
             document.getElementById('startGameBtn').style.display = 'none';
