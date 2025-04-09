@@ -40,27 +40,6 @@
             </div>
         </div>
 
-        <!-- Страница мультиплеера -->
-        <div id="multiplayer-page" class="page">
-            <button class="back-button" onclick="showPage('home')">
-                <img src="icons/back.svg" alt="Назад">
-            </button>
-            <h1>Мультиплеер</h1>
-            <div class="multiplayer-container">
-                <div id="lobby">
-                    <p id="status">Ожидание игроков... (1/5)</p>
-                    <div id="players-list"></div>
-                    <button class="big-button" id="startGameBtn" style="display: none;" onclick="startMultiplayerGame()">Начать игру</button>
-                </div>
-                <div id="game" style="display: none;">
-                    <div class="question" id="mp-question"></div>
-                    <div class="timer" id="timer">30</div>
-                    <div class="answers" id="mp-answers"></div>
-                    <div id="scoreboard"></div>
-                </div>
-            </div>
-        </div>
-
         <!-- Страница викторины -->
         <div id="quiz-page" class="page">
             <button class="back-button" onclick="showPage('categories')">
@@ -155,6 +134,38 @@
                 </div>
             </div>
         </div>
+
+        <!-- Страница мультиплеера -->
+<div id="multiplayer-page" class="page">
+    <button class="back-button" onclick="leaveMultiplayerRoom(); showPage('home')">
+        <img src="icons/back.svg" alt="Назад">
+    </button>
+    <h1>Мультиплеер</h1>
+    <div class="multiplayer-container">
+        <div id="lobby">
+            <div class="room-info">
+                <p>Комната: <span id="roomIdDisplay">Загрузка...</span></p>
+                <button class="small-button" onclick="copyRoomLink()">Скопировать ссылку</button>
+            </div>
+            <p id="status">Создание комнаты...</p>
+            <div class="players-container">
+                <h3>Игроки (<span id="playersCount">0</span>/5)</h3>
+                <div id="players-list"></div>
+            </div>
+            <button class="big-button" id="readyButton" onclick="toggleReady()">Готов</button>
+        </div>
+        <div id="game" style="display: none;">
+            <div class="question" id="mp-question"></div>
+            <div class="timer" id="mp-timer">20</div>
+            <div class="answers" id="mp-answers"></div>
+        </div>
+        <div id="results" style="display: none;">
+            <h2>Результаты</h2>
+            <div id="scoreboard"></div>
+            <button class="big-button" onclick="leaveMultiplayerRoom(); showPage('home')">В меню</button>
+        </div>
+    </div>
+</div>
 
         <!-- Навигация -->
         <div class="navigation">

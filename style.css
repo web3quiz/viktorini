@@ -721,88 +721,104 @@ button {
   z-index: 200;
 }
 
-/* Стили для мультиплеера */
-#multiplayer-page {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 60px;
-}
 
+
+
+/* Мультиплеер */
 .multiplayer-container {
   width: 100%;
   max-width: 500px;
+  margin: 0 auto;
+}
+
+.room-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.small-button {
+  padding: 8px 15px;
+  background-color: #5D3A8E;
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.players-container {
+  margin: 20px 0;
 }
 
 #players-list {
-  margin: 20px 0;
-  width: 100%;
+  margin-top: 15px;
 }
 
-.player-item {
+.player-card {
   display: flex;
-  justify-content: space-between;
-  padding: 12px 20px;
-  margin-bottom: 8px;
+  align-items: center;
+  padding: 12px 15px;
+  margin-bottom: 10px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: 10px;
+}
+
+.player-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 15px;
+  background-color: #42326C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .player-name {
+  flex-grow: 1;
   font-weight: 500;
 }
 
 .player-status {
   color: #E7BB4C;
+  font-weight: 600;
 }
 
-#startGameBtn {
-  margin-top: 20px;
+#readyButton.ready {
+  background-color: #4CAF50;
 }
 
-.timer {
+#mp-timer {
   font-size: 32px;
-  font-weight: bold;
   text-align: center;
   margin: 20px 0;
   color: #E7BB4C;
 }
 
-#scoreboard {
-  width: 100%;
-  margin-top: 20px;
-}
-
 .result-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 12px 15px;
   margin-bottom: 10px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
-.result-item .position {
+.result-position {
   font-weight: bold;
   width: 30px;
+  text-align: center;
+  margin-right: 15px;
 }
 
-.result-item .name {
+.result-name {
   flex-grow: 1;
-  margin: 0 15px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.result-item .score {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.result-item .prize {
+.result-score {
+  font-weight: 600;
   color: #E7BB4C;
-  font-weight: bold;
-  margin-left: 15px;
 }
