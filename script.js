@@ -296,23 +296,37 @@ function loadNextQuestion() {
     loadQuestion();
 }
 
-
 // ==================== Multiplayer Functions ====================
 
-function startMultiplayer() {
-    // Cleanup previous state
+async function startMultiplayer() {
+    // Проверяем, есть ли у пользователя активная комната
+    const activeRoom = await checkActiveRoom();
+    
+    if (activeRoom) {
+        // Проверяем, существует ли комната
+        const roomRef = firebase.database().ref('rooms/' + activeRoom);
+        const snapshot = await roomRef.once('value');
+        
+        if (snapshot.exists() && snapshot.val().status === 'waiting') {
+            // Возвращаемся в существующую комнату
+            multiplayerState.roomId = activeRoom;
+            multiplayerState.isHost = false;
+            joinRoom();
+            return;
+        } else {
+            // Удаляем ссылку на несуществующую комнату
+            if (!userId.startsWith("guest_")) {
+                await firebase.database().ref('users/' + userId + '/currentRoom').remove();
+            }
+        }
+    }
+    
+    // Если активной комнаты нет, создаем новую
     cleanupMultiplayer();
-    
     showPage('multiplayer');
-    document.getElementById('lobby').style.display = 'block';
-    document.getElementById('game').style.display = 'none';
-    document.getElementById('results').style.display = 'none';
     
-    // Generate room ID
     multiplayerState.roomId = generateRoomId();
     multiplayerState.isHost = true;
-    
-    // Create room in Firebase
     createRoom();
 }
 
@@ -338,6 +352,11 @@ function generateRoomId() {
 
 function createRoom() {
     multiplayerState.roomRef = firebase.database().ref('rooms/' + multiplayerState.roomId);
+    
+    // Сохраняем комнату для пользователя
+    if (!userId.startsWith("guest_")) {
+        firebase.database().ref('users/' + userId + '/currentRoom').set(multiplayerState.roomId);
+    }
     
     // Set initial room data
     multiplayerState.roomRef.set({
@@ -726,6 +745,15 @@ function leaveMultiplayerRoom() {
         multiplayerState.roomRef.child('players').once('value').then(snapshot => {
             if (!snapshot.exists() || snapshot.numChildren() === 0) {
                 multiplayerState.roomRef.remove();
+                // Remove room reference from all players
+                if (multiplayerState.roomId) {
+                    firebase.database().ref('users').orderByChild('currentRoom').equalTo(multiplayerState.roomId)
+                        .once('value').then(usersSnapshot => {
+                            usersSnapshot.forEach(user => {
+                                firebase.database().ref('users/' + user.key + '/currentRoom').remove();
+                            });
+                        });
+                }
             }
         });
     }
@@ -784,6 +812,19 @@ function checkRoomLink() {
     
     if (roomId) {
         joinMultiplayer(roomId);
+    }
+}
+
+// Check if user has active room
+async function checkActiveRoom() {
+    if (!userId || userId.startsWith("guest_")) return null;
+    
+    try {
+        const snapshot = await firebase.database().ref('users/' + userId + '/currentRoom').once('value');
+        return snapshot.val();
+    } catch (error) {
+        console.error("Error checking active room:", error);
+        return null;
     }
 }
 
