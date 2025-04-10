@@ -26,6 +26,7 @@ let questionsByCategory = {
     quran: [],
     hadisy: [],
     history: [],
+    spodvijniki: [],
     all: []
 };
 
@@ -110,9 +111,10 @@ async function loadQuestionsFromFirebase() {
                 quran: [...(firebaseQuestions.quran || []), ...temporaryQuestions.quran],
                 hadisy: [...(firebaseQuestions.hadisy || []), ...temporaryQuestions.hadisy],
                 history: [...(firebaseQuestions.history || []), ...temporaryQuestions.history],
+                spodvijniki: [...(firebaseQuestions.spodvijniki|| [])],
                 all: []
             };
-            questionsByCategory.all = [...questionsByCategory.quran, ...questionsByCategory.hadisy, ...questionsByCategory.history];
+            questionsByCategory.all = [...questionsByCategory.quran, ...questionsByCategory.hadisy, ...questionsByCategory.spodvijniki, ...questionsByCategory.history];
         } else {
             questionsByCategory = temporaryQuestions;
         }
