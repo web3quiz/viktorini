@@ -29,19 +29,6 @@ let questionsByCategory = {
     all: []
 };
 
-// Multiplayer state
-let multiplayerState = {
-    roomId: null,
-    roomRef: null,
-    isHost: false,
-    isReady: false,
-    gameStarted: false,
-    currentQuestionIndex: 0,
-    playerAnswers: {},
-    scores: {},
-    timer: null,
-    listeners: []
-};
 
 // Temporary questions
 const temporaryQuestions = {
@@ -296,193 +283,299 @@ function loadNextQuestion() {
     loadQuestion();
 }
 
+
+
+// ==================== Multiplayer State ====================
+let multiplayerState = {
+    roomId: null,
+    roomRef: null,
+    isHost: false,
+    isReady: false,
+    gameStarted: false,
+    currentQuestionIndex: 0,
+    playerAnswers: {},
+    scores: {},
+    timer: null,
+    listeners: [],
+    reconnectAttempts: 0
+};
+
 // ==================== Multiplayer Functions ====================
 
 async function startMultiplayer() {
-    // Проверяем, есть ли у пользователя активная комната
-    const activeRoom = await checkActiveRoom();
-    
-    if (activeRoom) {
-        // Проверяем, существует ли комната
-        const roomRef = firebase.database().ref('rooms/' + activeRoom);
-        const snapshot = await roomRef.once('value');
+    try {
+        // Cleanup previous state
+        cleanupMultiplayer();
         
-        if (snapshot.exists() && snapshot.val().status === 'waiting') {
-            // Возвращаемся в существующую комнату
-            multiplayerState.roomId = activeRoom;
-            multiplayerState.isHost = false;
-            joinRoom();
-            return;
-        } else {
-            // Удаляем ссылку на несуществующую комнату
-            if (!userId.startsWith("guest_")) {
-                await firebase.database().ref('users/' + userId + '/currentRoom').remove();
+        // Check for existing room
+        const activeRoom = await checkActiveRoom();
+        if (activeRoom) {
+            const roomRef = firebase.database().ref('rooms/' + activeRoom);
+            const snapshot = await roomRef.once('value');
+            
+            if (snapshot.exists() && snapshot.val().status === 'waiting') {
+                // Reconnect to existing room
+                multiplayerState.roomId = activeRoom;
+                multiplayerState.isHost = false;
+                await joinRoom();
+                return;
+            } else {
+                // Remove invalid room reference
+                if (!userId.startsWith("guest_")) {
+                    await firebase.database().ref('users/' + userId + '/currentRoom').remove();
+                }
             }
         }
+        
+        // Create new room
+        showPage('multiplayer');
+        document.getElementById('lobby').style.display = 'block';
+        document.getElementById('game').style.display = 'none';
+        document.getElementById('results').style.display = 'none';
+        
+        multiplayerState.roomId = generateRoomId();
+        multiplayerState.isHost = true;
+        await createRoom();
+        
+    } catch (error) {
+        console.error("Multiplayer start error:", error);
+        updateStatus("Ошибка создания комнаты");
+        showPage('home');
     }
-    
-    // Если активной комнаты нет, создаем новую
-    cleanupMultiplayer();
-    showPage('multiplayer');
-    
-    multiplayerState.roomId = generateRoomId();
-    multiplayerState.isHost = true;
-    createRoom();
 }
 
-function joinMultiplayer(roomId) {
-    // Cleanup previous state
-    cleanupMultiplayer();
-    
-    showPage('multiplayer');
-    document.getElementById('lobby').style.display = 'block';
-    document.getElementById('game').style.display = 'none';
-    document.getElementById('results').style.display = 'none';
-    
-    multiplayerState.roomId = roomId;
-    multiplayerState.isHost = false;
-    
-    // Join existing room
-    joinRoom();
-}
-
-function generateRoomId() {
-    return 'room_' + Math.random().toString(36).substr(2, 6).toUpperCase();
-}
-
-function createRoom() {
+async function createRoom() {
     multiplayerState.roomRef = firebase.database().ref('rooms/' + multiplayerState.roomId);
     
-    // Сохраняем комнату для пользователя
-    if (!userId.startsWith("guest_")) {
-        firebase.database().ref('users/' + userId + '/currentRoom').set(multiplayerState.roomId);
-    }
-    
-    // Set initial room data
-    multiplayerState.roomRef.set({
-        status: 'waiting',
-        players: {},
-        currentQuestion: 0,
-        questions: [],
-        createdAt: firebase.database.ServerValue.TIMESTAMP
-    }).then(() => {
+    try {
+        // Save room reference for user
+        if (!userId.startsWith("guest_")) {
+            await firebase.database().ref('users/' + userId + '/currentRoom').set(multiplayerState.roomId);
+        }
+        
+        // Set initial room data
+        await multiplayerState.roomRef.set({
+            status: 'waiting',
+            players: {},
+            currentQuestion: 0,
+            questions: [],
+            createdAt: firebase.database.ServerValue.TIMESTAMP,
+            version: 2 // Version identifier for compatibility
+        });
+        
         // Add current player
-        addPlayerToRoom();
+        await addPlayerToRoom();
         setupRoomListeners();
         updateStatus("Ожидание игроков...");
         document.getElementById('roomIdDisplay').textContent = multiplayerState.roomId;
-    }).catch(error => {
-        console.error("Error creating room:", error);
-        updateStatus("Ошибка создания комнаты");
-    });
+        
+    } catch (error) {
+        console.error("Room creation error:", error);
+        throw error;
+    }
 }
 
-function joinRoom() {
-    multiplayerState.roomRef = firebase.database().ref('rooms/' + multiplayerState.roomId);
-    
-    // Check if room exists
-    multiplayerState.roomRef.once('value').then(snapshot => {
+async function joinRoom() {
+    try {
+        multiplayerState.roomRef = firebase.database().ref('rooms/' + multiplayerState.roomId);
+        
+        const snapshot = await multiplayerState.roomRef.once('value');
         if (!snapshot.exists()) {
-            updateStatus("Комната не найдена");
-            return;
+            throw new Error("Комната не найдена");
         }
         
         const room = snapshot.val();
         if (room.status !== 'waiting') {
-            updateStatus("Игра уже началась");
-            return;
+            throw new Error("Игра уже началась");
         }
         
         if (Object.keys(room.players).length >= 5) {
-            updateStatus("Комната заполнена");
-            return;
+            throw new Error("Комната заполнена");
+        }
+        
+        // Save room reference for user
+        if (!userId.startsWith("guest_")) {
+            await firebase.database().ref('users/' + userId + '/currentRoom').set(multiplayerState.roomId);
         }
         
         // Add player to room
-        addPlayerToRoom();
+        await addPlayerToRoom();
         setupRoomListeners();
         document.getElementById('roomIdDisplay').textContent = multiplayerState.roomId;
-    }).catch(error => {
-        console.error("Error joining room:", error);
-        updateStatus("Ошибка входа в комнату");
-    });
+        
+    } catch (error) {
+        console.error("Join room error:", error);
+        updateStatus(error.message);
+        setTimeout(() => showPage('home'), 2000);
+        throw error;
+    }
 }
 
-function addPlayerToRoom() {
-    const playerData = {
-        id: userId,
-        name: userData ? `${userData.first_name} ${userData.last_name || ''}`.trim() : "Гость",
-        avatar: userData?.photo_url || "icons/avatar.svg",
-        isReady: false,
-        score: 0,
-        lastActive: firebase.database.ServerValue.TIMESTAMP
-    };
-    
-    multiplayerState.roomRef.child('players/' + userId).set(playerData);
+async function addPlayerToRoom() {
+    try {
+        const playerData = {
+            id: userId,
+            name: userData ? `${userData.first_name} ${userData.last_name || ''}`.trim() : "Гость",
+            avatar: userData?.photo_url || "icons/avatar.svg",
+            isReady: false,
+            score: 0,
+            lastActive: firebase.database.ServerValue.TIMESTAMP,
+            connection: 'online'
+        };
+        
+        await multiplayerState.roomRef.child('players/' + userId).set(playerData);
+        
+    } catch (error) {
+        console.error("Add player error:", error);
+        throw error;
+    }
 }
 
 function setupRoomListeners() {
-    // Room data listener
-    const roomListener = multiplayerState.roomRef.on('value', snapshot => {
+    // Cleanup previous listeners
+    multiplayerState.listeners.forEach(listener => {
+        if (listener.ref && listener.eventType && listener.callback) {
+            listener.ref.off(listener.eventType, listener.callback);
+        }
+    });
+    multiplayerState.listeners = [];
+    
+    // Room state listener
+    const roomListener = multiplayerState.roomRef.on('value', async (snapshot) => {
         const room = snapshot.val();
         if (!room) {
             updateStatus("Комната была закрыта");
-            setTimeout(() => {
-                showPage('home');
-            }, 2000);
+            setTimeout(() => showPage('home'), 2000);
             return;
         }
         
-        // Update players list
-        updatePlayersList(room.players);
-        
-        // Check if game should start
-        if (room.status === 'starting' && !multiplayerState.gameStarted) {
-            startGame(room);
-        }
-        
-        // Handle game progress
-        if (room.status === 'in_progress' && multiplayerState.gameStarted) {
-            handleGameProgress(room);
-        }
-        
-        // Handle game end
-        if (room.status === 'finished' && multiplayerState.gameStarted) {
-            showResults(room.results);
+        try {
+            // Update players list
+            await updatePlayersList(room.players);
+            
+            // Handle room state changes
+            switch (room.status) {
+                case 'starting':
+                    if (!multiplayerState.gameStarted) {
+                        await startGame(room);
+                    }
+                    break;
+                    
+                case 'in_progress':
+                    if (multiplayerState.gameStarted) {
+                        await handleGameProgress(room);
+                    } else {
+                        // Reconnect to ongoing game
+                        await reconnectToGame(room);
+                    }
+                    break;
+                    
+                case 'finished':
+                    if (multiplayerState.gameStarted) {
+                        showResults(room.results);
+                    }
+                    break;
+            }
+            
+        } catch (error) {
+            console.error("Room listener error:", error);
         }
     });
     
-    // Player left listener
-    const playerLeftListener = multiplayerState.roomRef.child('players').on('child_removed', snapshot => {
-        const playerId = snapshot.key;
-        if (playerId === userId) return;
+    // Player connection listener
+    const connectionListener = multiplayerState.roomRef.child('players').on('child_changed', (snapshot) => {
+        const player = snapshot.val();
+        if (player.id === userId) return;
         
-        // Update UI
-        const playerElement = document.getElementById(`player-${playerId}`);
+        // Update player status in UI
+        const playerElement = document.getElementById(`player-${player.id}`);
         if (playerElement) {
-            playerElement.remove();
+            const statusElement = playerElement.querySelector('.player-status');
+            if (statusElement) {
+                statusElement.textContent = player.connection === 'online' ? 
+                    (player.isReady ? '✓ Готов' : 'Не готов') : 'Оффлайн';
+            }
         }
-        
-        // Update count
-        const playersCount = document.querySelectorAll('.player-card').length;
-        document.getElementById('playersCount').textContent = playersCount;
     });
     
     // Store listeners for cleanup
     multiplayerState.listeners.push(
         { ref: multiplayerState.roomRef, eventType: 'value', callback: roomListener },
-        { ref: multiplayerState.roomRef.child('players'), eventType: 'child_removed', callback: playerLeftListener }
+        { ref: multiplayerState.roomRef.child('players'), eventType: 'child_changed', callback: connectionListener }
     );
+    
+    // Set up beforeunload handler
+    window.addEventListener('beforeunload', handleBeforeUnload);
 }
 
-function updatePlayersList(players) {
+async function reconnectToGame(room) {
+    try {
+        multiplayerState.gameStarted = true;
+        multiplayerState.currentQuestionIndex = room.currentQuestion || 0;
+        
+        // Initialize scores
+        multiplayerState.scores = {};
+        Object.keys(room.players).forEach(playerId => {
+            multiplayerState.scores[playerId] = room.players[playerId].score || 0;
+        });
+        
+        // Update UI
+        document.getElementById('lobby').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+        
+        // Load current question
+        if (room.questions && room.questions.length > 0 && 
+            multiplayerState.currentQuestionIndex < room.questions.length) {
+            loadMultiplayerQuestion(room.questions[multiplayerState.currentQuestionIndex]);
+            
+            // Calculate remaining time (20 seconds per question)
+            const questionStartTime = room.startedAt + (multiplayerState.currentQuestionIndex * 20000);
+            const timeLeft = Math.max(1, Math.floor((questionStartTime + 20000 - Date.now()) / 1000));
+            
+            startQuestionTimer(timeLeft);
+        }
+        
+        // Update player connection status
+        await multiplayerState.roomRef.child(`players/${userId}/connection`).set('online');
+        
+    } catch (error) {
+        console.error("Reconnect error:", error);
+        throw error;
+    }
+}
+
+function handleBeforeUnload() {
+    if (multiplayerState.roomRef && userId) {
+        // Mark player as offline
+        multiplayerState.roomRef.child(`players/${userId}/connection`).set('offline');
+        
+        // If host, check if room should be closed
+        if (multiplayerState.isHost) {
+            multiplayerState.roomRef.child('players').once('value').then(snapshot => {
+                const players = snapshot.val() || {};
+                const onlinePlayers = Object.values(players).filter(p => p.connection === 'online');
+                
+                if (onlinePlayers.length === 0) {
+                    // No players left, close room
+                    multiplayerState.roomRef.remove();
+                }
+            });
+        }
+    }
+}
+
+async function updatePlayersList(players) {
     const playersList = document.getElementById('players-list');
+    if (!playersList) return;
+    
     playersList.innerHTML = '';
     
     let readyCount = 0;
     let totalPlayers = 0;
     
     Object.values(players).forEach(player => {
+        if (!player) return;
+        
         totalPlayers++;
         if (player.isReady) readyCount++;
         
@@ -494,7 +587,8 @@ function updatePlayersList(players) {
                 ${player.name.charAt(0).toUpperCase()}
             </div>
             <div class="player-name">${player.name}</div>
-            <div class="player-status">${player.isReady ? '✓ Готов' : 'Не готов'}</div>
+            <div class="player-status">${player.connection === 'online' ? 
+                (player.isReady ? '✓ Готов' : 'Не готов') : 'Оффлайн'}</div>
         `;
         playersList.appendChild(playerElement);
     });
@@ -503,57 +597,78 @@ function updatePlayersList(players) {
     
     // Auto-start if conditions met (host only)
     if (multiplayerState.isHost && totalPlayers >= 2 && readyCount === totalPlayers) {
-        prepareGame();
+        await prepareGame();
     }
 }
 
-function toggleReady() {
-    const newReadyState = !multiplayerState.isReady;
-    multiplayerState.isReady = newReadyState;
-    
-    multiplayerState.roomRef.child(`players/${userId}/isReady`).set(newReadyState);
-    document.getElementById('readyButton').classList.toggle('ready', newReadyState);
-    document.getElementById('readyButton').textContent = newReadyState ? 'Отменить' : 'Готов';
+async function toggleReady() {
+    try {
+        const newReadyState = !multiplayerState.isReady;
+        multiplayerState.isReady = newReadyState;
+        
+        await multiplayerState.roomRef.child(`players/${userId}/isReady`).set(newReadyState);
+        document.getElementById('readyButton').classList.toggle('ready', newReadyState);
+        document.getElementById('readyButton').textContent = newReadyState ? 'Отменить' : 'Готов';
+        
+    } catch (error) {
+        console.error("Toggle ready error:", error);
+        updateStatus("Ошибка изменения статуса");
+    }
 }
 
-function prepareGame() {
+async function prepareGame() {
     if (!multiplayerState.isHost) return;
     
-    // Select 20 random questions
-    const allQuestions = [...questionsByCategory.all];
-    const selectedQuestions = shuffleArray(allQuestions).slice(0, 20);
-    
-    // Update room status and questions
-    multiplayerState.roomRef.update({
-        status: 'starting',
-        questions: selectedQuestions
-    });
+    try {
+        // Select 20 random questions
+        const allQuestions = [...questionsByCategory.all];
+        const selectedQuestions = shuffleArray(allQuestions).slice(0, 20);
+        
+        // Update room status and questions
+        await multiplayerState.roomRef.update({
+            status: 'starting',
+            questions: selectedQuestions
+        });
+        
+    } catch (error) {
+        console.error("Prepare game error:", error);
+        updateStatus("Ошибка подготовки игры");
+    }
 }
 
-function startGame(room) {
-    multiplayerState.gameStarted = true;
-    multiplayerState.currentQuestionIndex = 0;
-    multiplayerState.scores = {};
-    
-    // Initialize scores
-    Object.keys(room.players).forEach(playerId => {
-        multiplayerState.scores[playerId] = 0;
-    });
-    
-    // Update UI
-    document.getElementById('lobby').style.display = 'none';
-    document.getElementById('game').style.display = 'block';
-    
-    // Start first question
-    loadMultiplayerQuestion(room.questions[0]);
-    
-    // Update room status
-    if (multiplayerState.isHost) {
-        multiplayerState.roomRef.update({
-            status: 'in_progress',
-            currentQuestion: 0,
-            startedAt: firebase.database.ServerValue.TIMESTAMP
+async function startGame(room) {
+    try {
+        multiplayerState.gameStarted = true;
+        multiplayerState.currentQuestionIndex = 0;
+        multiplayerState.scores = {};
+        
+        // Initialize scores
+        Object.keys(room.players).forEach(playerId => {
+            multiplayerState.scores[playerId] = 0;
         });
+        
+        // Update UI
+        document.getElementById('lobby').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+        
+        // Start first question
+        if (room.questions && room.questions.length > 0) {
+            loadMultiplayerQuestion(room.questions[0]);
+            startQuestionTimer(20);
+        }
+        
+        // Update room status
+        if (multiplayerState.isHost) {
+            await multiplayerState.roomRef.update({
+                status: 'in_progress',
+                currentQuestion: 0,
+                startedAt: Date.now()
+            });
+        }
+        
+    } catch (error) {
+        console.error("Start game error:", error);
+        throw error;
     }
 }
 
@@ -576,90 +691,102 @@ function loadMultiplayerQuestion(questionData) {
         button.onclick = () => submitAnswer(index, questionData.correctAnswer);
         answersContainer.appendChild(button);
     });
-    
-    // Start timer
-    startQuestionTimer();
 }
 
-function startQuestionTimer() {
-    let timeLeft = 20;
+function startQuestionTimer(seconds) {
+    clearInterval(multiplayerState.timer);
+    
+    let timeLeft = seconds;
     const timerElement = document.getElementById('mp-timer');
     timerElement.textContent = timeLeft;
     
-    clearInterval(multiplayerState.timer);
     multiplayerState.timer = setInterval(() => {
         timeLeft--;
         timerElement.textContent = timeLeft;
         
         if (timeLeft <= 0) {
             clearInterval(multiplayerState.timer);
-            proceedToNextQuestion();
+            if (multiplayerState.isHost) {
+                proceedToNextQuestion();
+            }
         }
     }, 1000);
 }
 
-function submitAnswer(answerIndex, correctAnswer) {
-    // Disable all buttons
-    const buttons = document.querySelectorAll('#mp-answers .answer-button');
-    buttons.forEach(btn => btn.disabled = true);
-    
-    // Mark correct/incorrect
-    if (answerIndex === correctAnswer) {
-        buttons[answerIndex].classList.add('correct');
+async function submitAnswer(answerIndex, correctAnswer) {
+    try {
+        // Disable all buttons
+        const buttons = document.querySelectorAll('#mp-answers .answer-button');
+        buttons.forEach(btn => btn.disabled = true);
         
-        // Update score locally
-        multiplayerState.scores[userId] = (multiplayerState.scores[userId] || 0) + 1;
+        // Mark correct/incorrect
+        if (answerIndex === correctAnswer) {
+            buttons[answerIndex].classList.add('correct');
+            
+            // Update score
+            multiplayerState.scores[userId] = (multiplayerState.scores[userId] || 0) + 1;
+            await multiplayerState.roomRef.child(`players/${userId}/score`).transaction(score => {
+                return (score || 0) + 1;
+            });
+        } else {
+            buttons[answerIndex].classList.add('incorrect');
+            buttons[correctAnswer].classList.add('correct');
+        }
         
-        // Update score in Firebase
-        multiplayerState.roomRef.child(`players/${userId}/score`).transaction(score => {
-            return (score || 0) + 1;
-        });
-    } else {
-        buttons[answerIndex].classList.add('incorrect');
-        buttons[correctAnswer].classList.add('correct');
+        // Save answer
+        multiplayerState.playerAnswers[multiplayerState.currentQuestionIndex] = answerIndex;
+        
+    } catch (error) {
+        console.error("Submit answer error:", error);
     }
-    
-    // Save answer
-    multiplayerState.playerAnswers[multiplayerState.currentQuestionIndex] = answerIndex;
 }
 
-function proceedToNextQuestion() {
+async function proceedToNextQuestion() {
     if (!multiplayerState.isHost) return;
     
-    multiplayerState.currentQuestionIndex++;
-    
-    multiplayerState.roomRef.once('value').then(snapshot => {
+    try {
+        multiplayerState.currentQuestionIndex++;
+        
+        const snapshot = await multiplayerState.roomRef.once('value');
         const room = snapshot.val();
         const questions = room.questions || [];
         
         if (multiplayerState.currentQuestionIndex < questions.length) {
             // Load next question
-            multiplayerState.roomRef.update({
+            await multiplayerState.roomRef.update({
                 currentQuestion: multiplayerState.currentQuestionIndex
             });
         } else {
             // End game
-            endGame();
+            await endGame();
         }
-    });
+        
+    } catch (error) {
+        console.error("Proceed to next question error:", error);
+    }
 }
 
-function handleGameProgress(room) {
+async function handleGameProgress(room) {
     if (room.currentQuestion !== multiplayerState.currentQuestionIndex) {
         multiplayerState.currentQuestionIndex = room.currentQuestion;
         
         if (multiplayerState.currentQuestionIndex < room.questions.length) {
-            loadMultiplayerQuestion(room.questions[room.currentQuestionIndex]);
+            loadMultiplayerQuestion(room.questions[multiplayerState.currentQuestionIndex]);
+            
+            // Calculate remaining time
+            const questionStartTime = room.startedAt + (multiplayerState.currentQuestionIndex * 20000);
+            const timeLeft = Math.max(1, Math.floor((questionStartTime + 20000 - Date.now()) / 1000));
+            
+            startQuestionTimer(timeLeft);
         }
     }
 }
 
-function endGame() {
-    if (!multiplayerState.isHost) return;
-    
-    // Calculate results
-    multiplayerState.roomRef.child('players').once('value').then(snapshot => {
-        const players = snapshot.val();
+async function endGame() {
+    try {
+        // Calculate results
+        const snapshot = await multiplayerState.roomRef.child('players').once('value');
+        const players = snapshot.val() || {};
         const results = [];
         
         // Prepare results array
@@ -675,29 +802,48 @@ function endGame() {
         results.sort((a, b) => b.score - a.score);
         
         // Award GEM to top players
+        await awardPrizes(results);
+        
+        // Update room with results
+        await multiplayerState.roomRef.update({
+            status: 'finished',
+            results: results,
+            finishedAt: Date.now()
+        });
+        
+        // Remove room references
+        await cleanupAfterGame();
+        
+    } catch (error) {
+        console.error("End game error:", error);
+    }
+}
+
+async function awardPrizes(results) {
+    try {
+        // 1st place
         if (results.length > 0 && !results[0].id.startsWith("guest_")) {
-            firebase.database().ref(`users/${results[0].id}/score`).transaction(score => {
-                return (score || 0) + 50; // 50 GEM for 1st place
-            });
-        }
-        if (results.length > 1 && !results[1].id.startsWith("guest_")) {
-            firebase.database().ref(`users/${results[1].id}/score`).transaction(score => {
-                return (score || 0) + 30; // 30 GEM for 2nd place
-            });
-        }
-        if (results.length > 2 && !results[2].id.startsWith("guest_")) {
-            firebase.database().ref(`users/${results[2].id}/score`).transaction(score => {
-                return (score || 0) + 20; // 20 GEM for 3rd place
+            await firebase.database().ref(`users/${results[0].id}/score`).transaction(score => {
+                return (score || 0) + 50;
             });
         }
         
-        // Update room with results
-        multiplayerState.roomRef.update({
-            status: 'finished',
-            results: results,
-            finishedAt: firebase.database.ServerValue.TIMESTAMP
-        });
-    });
+        // 2nd place
+        if (results.length > 1 && !results[1].id.startsWith("guest_")) {
+            await firebase.database().ref(`users/${results[1].id}/score`).transaction(score => {
+                return (score || 0) + 30;
+            });
+        }
+        
+        // 3rd place
+        if (results.length > 2 && !results[2].id.startsWith("guest_")) {
+            await firebase.database().ref(`users/${results[2].id}/score`).transaction(score => {
+                return (score || 0) + 20;
+            });
+        }
+    } catch (error) {
+        console.error("Award prizes error:", error);
+    }
 }
 
 function showResults(results) {
@@ -710,7 +856,7 @@ function showResults(results) {
     scoreboard.innerHTML = '';
     
     // Sort results by score
-    const sortedResults = Object.values(results).sort((a, b) => b.score - a.score);
+    const sortedResults = results.sort((a, b) => b.score - a.score);
     
     // Display results
     sortedResults.forEach((player, index) => {
@@ -732,33 +878,49 @@ function showResults(results) {
     });
 }
 
-function leaveMultiplayerRoom() {
-    if (!multiplayerState.roomRef) return;
-    
-    // Remove player from room
-    multiplayerState.roomRef.child(`players/${userId}`).remove().catch(error => {
-        console.error("Error removing player:", error);
-    });
-    
-    // If host and room is empty, delete room
-    if (multiplayerState.isHost) {
-        multiplayerState.roomRef.child('players').once('value').then(snapshot => {
-            if (!snapshot.exists() || snapshot.numChildren() === 0) {
-                multiplayerState.roomRef.remove();
-                // Remove room reference from all players
-                if (multiplayerState.roomId) {
-                    firebase.database().ref('users').orderByChild('currentRoom').equalTo(multiplayerState.roomId)
-                        .once('value').then(usersSnapshot => {
-                            usersSnapshot.forEach(user => {
-                                firebase.database().ref('users/' + user.key + '/currentRoom').remove();
-                            });
-                        });
+async function leaveMultiplayerRoom() {
+    try {
+        if (multiplayerState.roomRef && userId) {
+            // Remove player from room
+            await multiplayerState.roomRef.child(`players/${userId}`).remove();
+            
+            // If host and room is empty, delete room
+            if (multiplayerState.isHost) {
+                const snapshot = await multiplayerState.roomRef.child('players').once('value');
+                if (!snapshot.exists() || snapshot.numChildren() === 0) {
+                    await multiplayerState.roomRef.remove();
+                    await cleanupAfterGame();
                 }
             }
-        });
+        }
+    } catch (error) {
+        console.error("Leave room error:", error);
+    } finally {
+        cleanupMultiplayer();
+        showPage('home');
     }
-    
-    cleanupMultiplayer();
+}
+
+async function cleanupAfterGame() {
+    try {
+        // Remove room references from all players
+        if (multiplayerState.roomId) {
+            const snapshot = await firebase.database().ref('users')
+                .orderByChild('currentRoom')
+                .equalTo(multiplayerState.roomId)
+                .once('value');
+                
+            if (snapshot.exists()) {
+                const updates = {};
+                snapshot.forEach(user => {
+                    updates[`users/${user.key}/currentRoom`] = null;
+                });
+                await firebase.database().ref().update(updates);
+            }
+        }
+    } catch (error) {
+        console.error("Cleanup after game error:", error);
+    }
 }
 
 function cleanupMultiplayer() {
@@ -773,6 +935,9 @@ function cleanupMultiplayer() {
     });
     multiplayerState.listeners = [];
     
+    // Remove beforeunload handler
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+    
     // Reset state
     multiplayerState = {
         roomId: null,
@@ -784,8 +949,27 @@ function cleanupMultiplayer() {
         playerAnswers: {},
         scores: {},
         timer: null,
-        listeners: []
+        listeners: [],
+        reconnectAttempts: 0
     };
+}
+
+// ==================== Helper Functions ====================
+
+function generateRoomId() {
+    return 'room_' + Math.random().toString(36).substr(2, 6).toUpperCase();
+}
+
+async function checkActiveRoom() {
+    if (!userId || userId.startsWith("guest_")) return null;
+    
+    try {
+        const snapshot = await firebase.database().ref('users/' + userId + '/currentRoom').once('value');
+        return snapshot.val();
+    } catch (error) {
+        console.error("Check active room error:", error);
+        return null;
+    }
 }
 
 function copyRoomLink() {
@@ -797,12 +981,15 @@ function copyRoomLink() {
             alert('Ссылка скопирована');
         }
     }).catch(err => {
-        console.error('Failed to copy: ', err);
+        console.error('Copy error:', err);
     });
 }
 
 function updateStatus(message) {
-    document.getElementById('status').textContent = message;
+    const statusElement = document.getElementById('status');
+    if (statusElement) {
+        statusElement.textContent = message;
+    }
 }
 
 // Handle room link on page load
@@ -811,20 +998,10 @@ function checkRoomLink() {
     const roomId = urlParams.get('room');
     
     if (roomId) {
-        joinMultiplayer(roomId);
-    }
-}
-
-// Check if user has active room
-async function checkActiveRoom() {
-    if (!userId || userId.startsWith("guest_")) return null;
-    
-    try {
-        const snapshot = await firebase.database().ref('users/' + userId + '/currentRoom').once('value');
-        return snapshot.val();
-    } catch (error) {
-        console.error("Error checking active room:", error);
-        return null;
+        showPage('multiplayer');
+        multiplayerState.roomId = roomId;
+        multiplayerState.isHost = false;
+        joinRoom();
     }
 }
 
