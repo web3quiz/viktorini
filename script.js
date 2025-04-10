@@ -29,7 +29,6 @@ let questionsByCategory = {
     all: []
 };
 
-
 // Temporary questions
 const temporaryQuestions = {
     quran: [
@@ -61,23 +60,33 @@ const temporaryQuestions = {
 };
 temporaryQuestions.all = [...temporaryQuestions.quran, ...temporaryQuestions.hadisy, ...temporaryQuestions.history];
 
+// Multiplayer state
+let multiplayerState = {
+    roomId: null,
+    roomRef: null,
+    isHost: false,
+    isReady: false,
+    gameStarted: false,
+    currentQuestionIndex: 0,
+    playerAnswers: {},
+    scores: {},
+    timer: null,
+    listeners: [],
+    reconnectAttempts: 0
+};
+
 // Initialize app
 document.addEventListener("DOMContentLoaded", async () => {
     try {
         console.log("Initializing app...");
         initTelegramWebApp();
         
-        // Test connection
-        firebase.database().ref('.info/connected').on('value', (snap) => {
-            console.log(snap.val() ? "Connected to Firebase" : "Not connected to Firebase");
-        });
-
         await loadQuestionsFromFirebase();
         await initUserData();
         updateProfile();
         updateReferralStats();
         checkReferral();
-        checkRoomLink(); // Check for room link
+        checkRoomLink();
         showPage('home');
         setupCopyProtection();
         
@@ -92,6 +101,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadQuestionsFromFirebase() {
     try {
+        console.log("Loading questions from Firebase...");
         const snapshot = await firebase.database().ref('questions').once('value');
         
         if (snapshot.exists()) {
@@ -102,17 +112,8 @@ async function loadQuestionsFromFirebase() {
                 history: [...(firebaseQuestions.history || []), ...temporaryQuestions.history],
                 all: []
             };
-            
-            // Собираем все вопросы
-            questionsByCategory.all = [
-                ...questionsByCategory.quran,
-                ...questionsByCategory.hadisy,
-                ...questionsByCategory.history
-            ];
-            
-            console.log("Questions loaded:", questionsByCategory);
+            questionsByCategory.all = [...questionsByCategory.quran, ...questionsByCategory.hadisy, ...questionsByCategory.history];
         } else {
-            console.log("Using temporary questions");
             questionsByCategory = temporaryQuestions;
         }
     } catch (error) {
@@ -122,11 +123,9 @@ async function loadQuestionsFromFirebase() {
 }
 
 async function initUserData() {
-    // Load from localStorage
     score = parseInt(localStorage.getItem("quizScore")) || 0;
     referralCount = parseInt(localStorage.getItem("referralCount")) || 0;
 
-    // Check Telegram user
     if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
         userData = Telegram.WebApp.initDataUnsafe.user;
         userId = userData.id.toString();
@@ -136,7 +135,6 @@ async function initUserData() {
             const snapshot = await userRef.once('value');
             
             if (!snapshot.exists()) {
-                // Create new user
                 await userRef.set({
                     id: userId,
                     firstName: userData.first_name,
@@ -148,23 +146,18 @@ async function initUserData() {
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 });
             } else {
-                // Update existing user
                 const user = snapshot.val();
                 score = user.score || score;
                 referralCount = user.referrals || referralCount;
                 localStorage.setItem("quizScore", score);
                 localStorage.setItem("referralCount", referralCount);
-                
-                await userRef.update({ 
-                    lastActive: firebase.database.ServerValue.TIMESTAMP 
-                });
+                await userRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP });
             }
         } catch (error) {
             console.error("User init error:", error);
             userId = "guest_" + Math.random().toString(36).substr(2, 9);
         }
     } else {
-        // Guest mode
         userId = "guest_" + Math.random().toString(36).substr(2, 9);
     }
     
@@ -190,16 +183,12 @@ async function updateUserData(updates) {
 // ==================== Quiz Functions ====================
 
 function startQuiz(category) {
-    console.log(`Starting quiz for category: ${category}`, questionsByCategory[category]);
     if (!questionsByCategory[category]?.length) {
         alert("Вопросы загружаются, попробуйте позже");
         return;
     }
     
-    // Сохраняем текущую категорию
     currentCategory = category;
-    
-    // Всегда перемешиваем вопросы при начале викторины
     shuffledQuestions = shuffleArray([...questionsByCategory[category]]);
     currentQuestionIndex = 0;
     
@@ -210,25 +199,22 @@ function startQuiz(category) {
 function loadQuestion() {
     if (currentQuestionIndex >= shuffledQuestions.length) {
         currentQuestionIndex = 0;
-        shuffledQuestions = shuffleArray([...shuffledQuestions]); // Перемешиваем заново если дошли до конца
+        shuffledQuestions = shuffleArray([...shuffledQuestions]);
     }
 
     const questionElement = document.getElementById("question");
     const answersContainer = document.getElementById("answers");
     const nextButton = document.getElementById("nextQuestion");
 
-    // Reset state
     questionElement.classList.remove("show");
     nextButton.classList.remove("show");
     answersContainer.innerHTML = "";
 
-    // Show question with animation
     setTimeout(() => {
         const questionData = shuffledQuestions[currentQuestionIndex];
         questionElement.textContent = questionData.question;
         questionElement.classList.add("show");
 
-        // Add answer buttons
         questionData.answers.forEach((answer, index) => {
             const button = document.createElement("button");
             button.className = "answer-button";
@@ -246,19 +232,15 @@ function checkAnswer(index) {
     const questionData = shuffledQuestions[currentQuestionIndex];
     const buttons = document.querySelectorAll(".answer-button");
 
-    // Disable all buttons
     buttons.forEach(btn => btn.disabled = true);
 
     if (index === questionData.correctAnswer) {
-        // Correct answer
         buttons[index].classList.add("correct");
     } else {
-        // Wrong answer
         buttons[index].classList.add("incorrect");
         buttons[questionData.correctAnswer].classList.add("correct");
     }
 
-    // Auto proceed to next question
     setTimeout(loadNextQuestion, 1500);
 }
 
@@ -267,51 +249,27 @@ function loadNextQuestion() {
     loadQuestion();
 }
 
-
-
-// ==================== Multiplayer State ====================
-let multiplayerState = {
-    roomId: null,
-    roomRef: null,
-    isHost: false,
-    isReady: false,
-    gameStarted: false,
-    currentQuestionIndex: 0,
-    playerAnswers: {},
-    scores: {},
-    timer: null,
-    listeners: [],
-    reconnectAttempts: 0
-};
-
 // ==================== Multiplayer Functions ====================
 
 async function startMultiplayer() {
     try {
-        // Cleanup previous state
         cleanupMultiplayer();
         
-        // Check for existing room
         const activeRoom = await checkActiveRoom();
         if (activeRoom) {
             const roomRef = firebase.database().ref('rooms/' + activeRoom);
             const snapshot = await roomRef.once('value');
             
             if (snapshot.exists() && snapshot.val().status === 'waiting') {
-                // Reconnect to existing room
                 multiplayerState.roomId = activeRoom;
                 multiplayerState.isHost = false;
                 await joinRoom();
                 return;
-            } else {
-                // Remove invalid room reference
-                if (!userId.startsWith("guest_")) {
-                    await firebase.database().ref('users/' + userId + '/currentRoom').remove();
-                }
+            } else if (!userId.startsWith("guest_")) {
+                await firebase.database().ref('users/' + userId + '/currentRoom').remove();
             }
         }
         
-        // Create new room
         showPage('multiplayer');
         document.getElementById('lobby').style.display = 'block';
         document.getElementById('game').style.display = 'none';
@@ -320,7 +278,6 @@ async function startMultiplayer() {
         multiplayerState.roomId = generateRoomId();
         multiplayerState.isHost = true;
         await createRoom();
-        
     } catch (error) {
         console.error("Multiplayer start error:", error);
         updateStatus("Ошибка создания комнаты");
@@ -332,27 +289,23 @@ async function createRoom() {
     multiplayerState.roomRef = firebase.database().ref('rooms/' + multiplayerState.roomId);
     
     try {
-        // Save room reference for user
         if (!userId.startsWith("guest_")) {
             await firebase.database().ref('users/' + userId + '/currentRoom').set(multiplayerState.roomId);
         }
         
-        // Set initial room data
         await multiplayerState.roomRef.set({
             status: 'waiting',
             players: {},
             currentQuestion: 0,
             questions: [],
             createdAt: firebase.database.ServerValue.TIMESTAMP,
-            version: 2 // Version identifier for compatibility
+            version: 2
         });
         
-        // Add current player
         await addPlayerToRoom();
         setupRoomListeners();
         updateStatus("Ожидание игроков...");
         document.getElementById('roomIdDisplay').textContent = multiplayerState.roomId;
-        
     } catch (error) {
         console.error("Room creation error:", error);
         throw error;
@@ -362,31 +315,21 @@ async function createRoom() {
 async function joinRoom() {
     try {
         multiplayerState.roomRef = firebase.database().ref('rooms/' + multiplayerState.roomId);
-        
         const snapshot = await multiplayerState.roomRef.once('value');
-        if (!snapshot.exists()) {
-            throw new Error("Комната не найдена");
-        }
+        
+        if (!snapshot.exists()) throw new Error("Комната не найдена");
         
         const room = snapshot.val();
-        if (room.status !== 'waiting') {
-            throw new Error("Игра уже началась");
-        }
+        if (room.status !== 'waiting') throw new Error("Игра уже началась");
+        if (Object.keys(room.players).length >= 5) throw new Error("Комната заполнена");
         
-        if (Object.keys(room.players).length >= 5) {
-            throw new Error("Комната заполнена");
-        }
-        
-        // Save room reference for user
         if (!userId.startsWith("guest_")) {
             await firebase.database().ref('users/' + userId + '/currentRoom').set(multiplayerState.roomId);
         }
         
-        // Add player to room
         await addPlayerToRoom();
         setupRoomListeners();
         document.getElementById('roomIdDisplay').textContent = multiplayerState.roomId;
-        
     } catch (error) {
         console.error("Join room error:", error);
         updateStatus(error.message);
@@ -408,7 +351,6 @@ async function addPlayerToRoom() {
         };
         
         await multiplayerState.roomRef.child('players/' + userId).set(playerData);
-        
     } catch (error) {
         console.error("Add player error:", error);
         throw error;
@@ -416,7 +358,6 @@ async function addPlayerToRoom() {
 }
 
 function setupRoomListeners() {
-    // Cleanup previous listeners
     multiplayerState.listeners.forEach(listener => {
         if (listener.ref && listener.eventType && listener.callback) {
             listener.ref.off(listener.eventType, listener.callback);
@@ -424,7 +365,6 @@ function setupRoomListeners() {
     });
     multiplayerState.listeners = [];
     
-    // Room state listener
     const roomListener = multiplayerState.roomRef.on('value', async (snapshot) => {
         const room = snapshot.val();
         if (!room) {
@@ -434,44 +374,32 @@ function setupRoomListeners() {
         }
         
         try {
-            // Update players list
             await updatePlayersList(room.players);
             
-            // Handle room state changes
             switch (room.status) {
                 case 'starting':
-                    if (!multiplayerState.gameStarted) {
-                        await startGame(room);
-                    }
+                    if (!multiplayerState.gameStarted) await startGame(room);
                     break;
-                    
                 case 'in_progress':
                     if (multiplayerState.gameStarted) {
                         await handleGameProgress(room);
                     } else {
-                        // Reconnect to ongoing game
                         await reconnectToGame(room);
                     }
                     break;
-                    
                 case 'finished':
-                    if (multiplayerState.gameStarted) {
-                        showResults(room.results);
-                    }
+                    if (multiplayerState.gameStarted) showResults(room.results);
                     break;
             }
-            
         } catch (error) {
             console.error("Room listener error:", error);
         }
     });
     
-    // Player connection listener
     const connectionListener = multiplayerState.roomRef.child('players').on('child_changed', (snapshot) => {
         const player = snapshot.val();
         if (player.id === userId) return;
         
-        // Update player status in UI
         const playerElement = document.getElementById(`player-${player.id}`);
         if (playerElement) {
             const statusElement = playerElement.querySelector('.player-status');
@@ -482,13 +410,11 @@ function setupRoomListeners() {
         }
     });
     
-    // Store listeners for cleanup
     multiplayerState.listeners.push(
         { ref: multiplayerState.roomRef, eventType: 'value', callback: roomListener },
         { ref: multiplayerState.roomRef.child('players'), eventType: 'child_changed', callback: connectionListener }
     );
     
-    // Set up beforeunload handler
     window.addEventListener('beforeunload', handleBeforeUnload);
 }
 
@@ -497,31 +423,25 @@ async function reconnectToGame(room) {
         multiplayerState.gameStarted = true;
         multiplayerState.currentQuestionIndex = room.currentQuestion || 0;
         
-        // Initialize scores
         multiplayerState.scores = {};
         Object.keys(room.players).forEach(playerId => {
             multiplayerState.scores[playerId] = room.players[playerId].score || 0;
         });
         
-        // Update UI
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('game').style.display = 'block';
         
-        // Load current question
         if (room.questions && room.questions.length > 0 && 
             multiplayerState.currentQuestionIndex < room.questions.length) {
             loadMultiplayerQuestion(room.questions[multiplayerState.currentQuestionIndex]);
             
-            // Calculate remaining time (20 seconds per question)
             const questionStartTime = room.startedAt + (multiplayerState.currentQuestionIndex * 20000);
-            const timeLeft = Math.max(1, Math.floor((questionStartTime + 20000 - Date.now()) / 1000));
+            const timeLeft = Math.max =(1, Math.floor((questionStartTime + 20000 - Date.now()) / 1000));
             
             startQuestionTimer(timeLeft);
         }
         
-        // Update player connection status
         await multiplayerState.roomRef.child(`players/${userId}/connection`).set('online');
-        
     } catch (error) {
         console.error("Reconnect error:", error);
         throw error;
@@ -530,17 +450,14 @@ async function reconnectToGame(room) {
 
 function handleBeforeUnload() {
     if (multiplayerState.roomRef && userId) {
-        // Mark player as offline
         multiplayerState.roomRef.child(`players/${userId}/connection`).set('offline');
         
-        // If host, check if room should be closed
         if (multiplayerState.isHost) {
             multiplayerState.roomRef.child('players').once('value').then(snapshot => {
                 const players = snapshot.val() || {};
                 const onlinePlayers = Object.values(players).filter(p => p.connection === 'online');
                 
                 if (onlinePlayers.length === 0) {
-                    // No players left, close room
                     multiplayerState.roomRef.remove();
                 }
             });
@@ -579,7 +496,6 @@ async function updatePlayersList(players) {
     
     document.getElementById('playersCount').textContent = totalPlayers;
     
-    // Auto-start if conditions met (host only)
     if (multiplayerState.isHost && totalPlayers >= 2 && readyCount === totalPlayers) {
         await prepareGame();
     }
@@ -593,7 +509,6 @@ async function toggleReady() {
         await multiplayerState.roomRef.child(`players/${userId}/isReady`).set(newReadyState);
         document.getElementById('readyButton').classList.toggle('ready', newReadyState);
         document.getElementById('readyButton').textContent = newReadyState ? 'Отменить' : 'Готов';
-        
     } catch (error) {
         console.error("Toggle ready error:", error);
         updateStatus("Ошибка изменения статуса");
@@ -604,20 +519,9 @@ async function prepareGame() {
     if (!multiplayerState.isHost) return;
     
     try {
-        // Проверка наличия вопросов
-        if (!questionsByCategory.all || questionsByCategory.all.length === 0) {
-            console.error("No questions available");
-            updateStatus("Ошибка: нет доступных вопросов");
-            return;
-        }
-        
-        // Выбор 20 случайных вопросов
         const allQuestions = [...questionsByCategory.all];
         const selectedQuestions = shuffleArray(allQuestions).slice(0, 20);
         
-        console.log("Selected questions:", selectedQuestions.length); // Для отладки
-        
-        // Обновление статуса комнаты и вопросов
         await multiplayerState.roomRef.update({
             status: 'starting',
             questions: selectedQuestions
@@ -630,7 +534,6 @@ async function prepareGame() {
 
 async function startGame(room) {
     try {
-        // Проверка вопросов
         if (!room.questions || room.questions.length === 0) {
             throw new Error("No questions available");
         }
@@ -639,21 +542,16 @@ async function startGame(room) {
         multiplayerState.currentQuestionIndex = 0;
         multiplayerState.scores = {};
         
-        // Инициализация счетов
         Object.keys(room.players).forEach(playerId => {
             multiplayerState.scores[playerId] = 0;
         });
         
-        // Обновление UI
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('game').style.display = 'block';
-        document.getElementById('results').style.display = 'none';
         
-        // Загрузка первого вопроса
         loadMultiplayerQuestion(room.questions[0]);
         startQuestionTimer(20);
         
-        // Обновление статуса комнаты
         if (multiplayerState.isHost) {
             await multiplayerState.roomRef.update({
                 status: 'in_progress',
@@ -668,19 +566,22 @@ async function startGame(room) {
 }
 
 function loadMultiplayerQuestion(questionData) {
-    console.log("Loading MP question:", questionData); // Отладочная информация
+    console.log("Loading MP question:", questionData);
     
     const questionElement = document.getElementById('mp-question');
     const answersContainer = document.getElementById('mp-answers');
     
-    // Очистка предыдущего вопроса
     questionElement.textContent = '';
     answersContainer.innerHTML = '';
     
-    // Установка нового вопроса
+    if (!questionData || !questionData.question || !questionData.answers) {
+        console.error("Invalid question data:", questionData);
+        questionElement.textContent = "Ошибка загрузки вопроса";
+        return;
+    }
+    
     questionElement.textContent = questionData.question;
     
-    // Добавление вариантов ответов
     questionData.answers.forEach((answer, index) => {
         const button = document.createElement('button');
         button.className = 'answer-button';
@@ -689,7 +590,6 @@ function loadMultiplayerQuestion(questionData) {
         answersContainer.appendChild(button);
     });
     
-    // Показываем игровую область
     document.getElementById('game').style.display = 'block';
     document.getElementById('lobby').style.display = 'none';
     document.getElementById('results').style.display = 'none';
@@ -701,7 +601,7 @@ function startQuestionTimer(seconds) {
     let timeLeft = seconds;
     const timerElement = document.getElementById('mp-timer');
     timerElement.textContent = timeLeft;
-    timerElement.style.display = 'block'; // Убедимся, что таймер виден
+    timerElement.style.display = 'block';
     
     multiplayerState.timer = setInterval(() => {
         timeLeft--;
@@ -718,15 +618,13 @@ function startQuestionTimer(seconds) {
 
 async function submitAnswer(answerIndex, correctAnswer) {
     try {
-        // Disable all buttons
+        console.log("Submitting answer:", answerIndex);
+        
         const buttons = document.querySelectorAll('#mp-answers .answer-button');
         buttons.forEach(btn => btn.disabled = true);
         
-        // Mark correct/incorrect
         if (answerIndex === correctAnswer) {
             buttons[answerIndex].classList.add('correct');
-            
-            // Update score
             multiplayerState.scores[userId] = (multiplayerState.scores[userId] || 0) + 1;
             await multiplayerState.roomRef.child(`players/${userId}/score`).transaction(score => {
                 return (score || 0) + 1;
@@ -736,9 +634,7 @@ async function submitAnswer(answerIndex, correctAnswer) {
             buttons[correctAnswer].classList.add('correct');
         }
         
-        // Save answer
         multiplayerState.playerAnswers[multiplayerState.currentQuestionIndex] = answerIndex;
-        
     } catch (error) {
         console.error("Submit answer error:", error);
     }
@@ -755,15 +651,12 @@ async function proceedToNextQuestion() {
         const questions = room.questions || [];
         
         if (multiplayerState.currentQuestionIndex < questions.length) {
-            // Load next question
             await multiplayerState.roomRef.update({
                 currentQuestion: multiplayerState.currentQuestionIndex
             });
         } else {
-            // End game
             await endGame();
         }
-        
     } catch (error) {
         console.error("Proceed to next question error:", error);
     }
@@ -776,7 +669,6 @@ async function handleGameProgress(room) {
         if (multiplayerState.currentQuestionIndex < room.questions.length) {
             loadMultiplayerQuestion(room.questions[multiplayerState.currentQuestionIndex]);
             
-            // Calculate remaining time
             const questionStartTime = room.startedAt + (multiplayerState.currentQuestionIndex * 20000);
             const timeLeft = Math.max(1, Math.floor((questionStartTime + 20000 - Date.now()) / 1000));
             
@@ -787,12 +679,10 @@ async function handleGameProgress(room) {
 
 async function endGame() {
     try {
-        // Calculate results
         const snapshot = await multiplayerState.roomRef.child('players').once('value');
         const players = snapshot.val() || {};
         const results = [];
         
-        // Prepare results array
         Object.keys(players).forEach(playerId => {
             results.push({
                 id: playerId,
@@ -801,22 +691,16 @@ async function endGame() {
             });
         });
         
-        // Sort by score
         results.sort((a, b) => b.score - a.score);
-        
-        // Award GEM to top players
         await awardPrizes(results);
         
-        // Update room with results
         await multiplayerState.roomRef.update({
             status: 'finished',
             results: results,
             finishedAt: Date.now()
         });
         
-        // Remove room references
         await cleanupAfterGame();
-        
     } catch (error) {
         console.error("End game error:", error);
     }
@@ -824,21 +708,18 @@ async function endGame() {
 
 async function awardPrizes(results) {
     try {
-        // 1st place
         if (results.length > 0 && !results[0].id.startsWith("guest_")) {
             await firebase.database().ref(`users/${results[0].id}/score`).transaction(score => {
                 return (score || 0) + 50;
             });
         }
         
-        // 2nd place
         if (results.length > 1 && !results[1].id.startsWith("guest_")) {
             await firebase.database().ref(`users/${results[1].id}/score`).transaction(score => {
                 return (score || 0) + 30;
             });
         }
         
-        // 3rd place
         if (results.length > 2 && !results[2].id.startsWith("guest_")) {
             await firebase.database().ref(`users/${results[2].id}/score`).transaction(score => {
                 return (score || 0) + 20;
@@ -858,10 +739,8 @@ function showResults(results) {
     const scoreboard = document.getElementById('scoreboard');
     scoreboard.innerHTML = '';
     
-    // Sort results by score
     const sortedResults = results.sort((a, b) => b.score - a.score);
     
-    // Display results
     sortedResults.forEach((player, index) => {
         const resultElement = document.createElement('div');
         resultElement.className = 'result-item';
@@ -884,10 +763,8 @@ function showResults(results) {
 async function leaveMultiplayerRoom() {
     try {
         if (multiplayerState.roomRef && userId) {
-            // Remove player from room
             await multiplayerState.roomRef.child(`players/${userId}`).remove();
             
-            // If host and room is empty, delete room
             if (multiplayerState.isHost) {
                 const snapshot = await multiplayerState.roomRef.child('players').once('value');
                 if (!snapshot.exists() || snapshot.numChildren() === 0) {
@@ -906,7 +783,6 @@ async function leaveMultiplayerRoom() {
 
 async function cleanupAfterGame() {
     try {
-        // Remove room references from all players
         if (multiplayerState.roomId) {
             const snapshot = await firebase.database().ref('users')
                 .orderByChild('currentRoom')
@@ -927,10 +803,8 @@ async function cleanupAfterGame() {
 }
 
 function cleanupMultiplayer() {
-    // Clear timer
     clearInterval(multiplayerState.timer);
     
-    // Remove all listeners
     multiplayerState.listeners.forEach(listener => {
         if (listener.ref && listener.eventType && listener.callback) {
             listener.ref.off(listener.eventType, listener.callback);
@@ -938,10 +812,8 @@ function cleanupMultiplayer() {
     });
     multiplayerState.listeners = [];
     
-    // Remove beforeunload handler
     window.removeEventListener('beforeunload', handleBeforeUnload);
     
-    // Reset state
     multiplayerState = {
         roomId: null,
         roomRef: null,
@@ -995,7 +867,6 @@ function updateStatus(message) {
     }
 }
 
-// Handle room link on page load
 function checkRoomLink() {
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get('room');
@@ -1049,7 +920,6 @@ function checkReferral() {
             localStorage.setItem('activatedReferrals', JSON.stringify(activatedReferrals));
             addReferral();
             
-            // Add bonus to referrer
             if (!refUserId.startsWith("guest_")) {
                 firebase.database().ref('users/' + refUserId).transaction(user => {
                     if (user) user.score = (user.score || 0) + 5;
@@ -1077,19 +947,13 @@ function updateReferralStats() {
 }
 
 function generateReferralLink() {
-    if (!userId) {
-        console.error("User ID not available");
-        return 'https://t.me/web3quiz_bot';
-    }
-    const link = `https://t.me/web3quiz_bot?start=ref_${userId}`;
-    console.log("Generated referral link:", link);
-    return link;
+    if (!userId) return 'https://t.me/web3quiz_bot';
+    return `https://t.me/web3quiz_bot?start=ref_${userId}`;
 }
 
 function shareReferralLink() {
     const referralLink = generateReferralLink();
     
-    // Для Telegram WebApp (встроенный браузер Telegram)
     if (window.Telegram?.WebApp?.openTelegramLink) {
         try {
             Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`);
@@ -1099,7 +963,6 @@ function shareReferralLink() {
         }
     }
     
-    // Для мобильных устройств (Android/iOS)
     if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
         const appLink = `tg://msg_url?url=${encodeURIComponent(referralLink)}`;
         const webLink = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}`;
@@ -1118,7 +981,6 @@ function shareReferralLink() {
         return;
     }
 
-    // Для десктопной версии
     window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`, '_blank');
 }
 
@@ -1128,7 +990,6 @@ async function loadLeaderboard() {
     const leaderboardElement = document.getElementById("leaderboard");
     
     try {
-        // Show loading state
         leaderboardElement.innerHTML = `
             <li class="loading">
                 <div class="loading-spinner"></div>
@@ -1136,7 +997,6 @@ async function loadLeaderboard() {
             </li>
         `;
 
-        // Get top 10 players
         const snapshot = await firebase.database().ref('users')
             .orderByChild('score')
             .limitToLast(10)
@@ -1154,16 +1014,13 @@ async function loadLeaderboard() {
             }
         });
 
-        // Sort by score (descending)
         users.sort((a, b) => b.score - a.score);
 
-        // Render or show message
         if (users.length > 0) {
             renderLeaderboard(leaderboardElement, users);
         } else {
             showNoDataMessage(leaderboardElement);
         }
-        
     } catch (error) {
         console.error("Leaderboard error:", error);
         showErrorMessage(leaderboardElement);
@@ -1202,7 +1059,6 @@ function showErrorMessage(element) {
         </li>
     `;
     
-    // Add event listener for retry button
     element.querySelector('.retry-button').addEventListener('click', loadLeaderboard);
 }
 
