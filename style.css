@@ -822,3 +822,66 @@ button {
   font-weight: 600;
   color: #E7BB4C;
 }
+
+
+
+
+
+/* Мультиплеерные стили */
+#game .quiz-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+#mp-question {
+  font-size: 24px;
+  margin-bottom: 30px;
+  text-align: center;
+  opacity: 1 !important; /* Переопределяем возможные скрывающие стили */
+  transform: none !important;
+}
+
+#mp-timer {
+  font-size: 32px;
+  text-align: center;
+  margin: 20px 0;
+  color: #E7BB4C;
+  font-weight: bold;
+}
+
+#mp-answers {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 auto 20px;
+}
+
+#mp-answers .answer-button {
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 10px;
+  font-size: 18px;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: all 0.3s ease;
+}
+
+#mp-answers .answer-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+#mp-answers .answer-button.correct {
+  background-color: #4CAF50 !important;
+  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.5);
+}
+
+#mp-answers .answer-button.incorrect {
+  background-color: #D2238F !important;
+  box-shadow: 0 4px 10px rgba(244, 67, 54, 0.5);
+}

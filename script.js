@@ -92,48 +92,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadQuestionsFromFirebase() {
     try {
-        console.log("Loading questions from Firebase...");
         const snapshot = await firebase.database().ref('questions').once('value');
         
         if (snapshot.exists()) {
-            console.log("Questions loaded from Firebase:", snapshot.val());
             const firebaseQuestions = snapshot.val();
+            questionsByCategory = {
+                quran: [...(firebaseQuestions.quran || []), ...temporaryQuestions.quran],
+                hadisy: [...(firebaseQuestions.hadisy || []), ...temporaryQuestions.hadisy],
+                history: [...(firebaseQuestions.history || []), ...temporaryQuestions.history],
+                all: []
+            };
             
-            // Merge Firebase questions with temporary questions
-            questionsByCategory = {
-                quran: [...(firebaseQuestions.quran || []), ...(temporaryQuestions.quran || [])],
-                hadisy: [...(firebaseQuestions.hadisy || []), ...(temporaryQuestions.hadisy || [])],
-                history: [...(firebaseQuestions.history || []), ...(temporaryQuestions.history || [])],
-                all: [
-                    ...(firebaseQuestions.quran || []),
-                    ...(firebaseQuestions.hadisy || []),
-                    ...(firebaseQuestions.history || []),
-                    ...(temporaryQuestions.quran || []),
-                    ...(temporaryQuestions.hadisy || []),
-                    ...(temporaryQuestions.history || [])
-                ]
-            };
+            // Собираем все вопросы
+            questionsByCategory.all = [
+                ...questionsByCategory.quran,
+                ...questionsByCategory.hadisy,
+                ...questionsByCategory.history
+            ];
+            
+            console.log("Questions loaded:", questionsByCategory);
         } else {
-            console.log("No questions in Firebase, using temporary questions");
-            questionsByCategory = {
-                ...temporaryQuestions,
-                all: [
-                    ...(temporaryQuestions.quran || []),
-                    ...(temporaryQuestions.hadisy || []),
-                    ...(temporaryQuestions.history || [])
-                ]
-            };
+            console.log("Using temporary questions");
+            questionsByCategory = temporaryQuestions;
         }
     } catch (error) {
         console.error("Error loading questions:", error);
-        questionsByCategory = {
-            ...temporaryQuestions,
-            all: [
-                ...(temporaryQuestions.quran || []),
-                ...(temporaryQuestions.hadisy || []),
-                ...(temporaryQuestions.history || [])
-            ]
-        };
+        questionsByCategory = temporaryQuestions;
     }
 }
 
@@ -620,16 +604,24 @@ async function prepareGame() {
     if (!multiplayerState.isHost) return;
     
     try {
-        // Select 20 random questions
+        // Проверка наличия вопросов
+        if (!questionsByCategory.all || questionsByCategory.all.length === 0) {
+            console.error("No questions available");
+            updateStatus("Ошибка: нет доступных вопросов");
+            return;
+        }
+        
+        // Выбор 20 случайных вопросов
         const allQuestions = [...questionsByCategory.all];
         const selectedQuestions = shuffleArray(allQuestions).slice(0, 20);
         
-        // Update room status and questions
+        console.log("Selected questions:", selectedQuestions.length); // Для отладки
+        
+        // Обновление статуса комнаты и вопросов
         await multiplayerState.roomRef.update({
             status: 'starting',
             questions: selectedQuestions
         });
-        
     } catch (error) {
         console.error("Prepare game error:", error);
         updateStatus("Ошибка подготовки игры");
@@ -638,26 +630,30 @@ async function prepareGame() {
 
 async function startGame(room) {
     try {
+        // Проверка вопросов
+        if (!room.questions || room.questions.length === 0) {
+            throw new Error("No questions available");
+        }
+
         multiplayerState.gameStarted = true;
         multiplayerState.currentQuestionIndex = 0;
         multiplayerState.scores = {};
         
-        // Initialize scores
+        // Инициализация счетов
         Object.keys(room.players).forEach(playerId => {
             multiplayerState.scores[playerId] = 0;
         });
         
-        // Update UI
+        // Обновление UI
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('game').style.display = 'block';
+        document.getElementById('results').style.display = 'none';
         
-        // Start first question
-        if (room.questions && room.questions.length > 0) {
-            loadMultiplayerQuestion(room.questions[0]);
-            startQuestionTimer(20);
-        }
+        // Загрузка первого вопроса
+        loadMultiplayerQuestion(room.questions[0]);
+        startQuestionTimer(20);
         
-        // Update room status
+        // Обновление статуса комнаты
         if (multiplayerState.isHost) {
             await multiplayerState.roomRef.update({
                 status: 'in_progress',
@@ -665,25 +661,26 @@ async function startGame(room) {
                 startedAt: Date.now()
             });
         }
-        
     } catch (error) {
         console.error("Start game error:", error);
-        throw error;
+        updateStatus("Ошибка начала игры: " + error.message);
     }
 }
 
 function loadMultiplayerQuestion(questionData) {
+    console.log("Loading MP question:", questionData); // Отладочная информация
+    
     const questionElement = document.getElementById('mp-question');
     const answersContainer = document.getElementById('mp-answers');
     
-    // Clear previous question
+    // Очистка предыдущего вопроса
     questionElement.textContent = '';
     answersContainer.innerHTML = '';
     
-    // Set new question
+    // Установка нового вопроса
     questionElement.textContent = questionData.question;
     
-    // Add answers
+    // Добавление вариантов ответов
     questionData.answers.forEach((answer, index) => {
         const button = document.createElement('button');
         button.className = 'answer-button';
@@ -691,6 +688,11 @@ function loadMultiplayerQuestion(questionData) {
         button.onclick = () => submitAnswer(index, questionData.correctAnswer);
         answersContainer.appendChild(button);
     });
+    
+    // Показываем игровую область
+    document.getElementById('game').style.display = 'block';
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('results').style.display = 'none';
 }
 
 function startQuestionTimer(seconds) {
@@ -699,6 +701,7 @@ function startQuestionTimer(seconds) {
     let timeLeft = seconds;
     const timerElement = document.getElementById('mp-timer');
     timerElement.textContent = timeLeft;
+    timerElement.style.display = 'block'; // Убедимся, что таймер виден
     
     multiplayerState.timer = setInterval(() => {
         timeLeft--;
@@ -1234,6 +1237,54 @@ async function savePurchase(itemName, price) {
     }
 }
 
+async function loadAvailableRooms() {
+    const container = document.getElementById('availableRoomsContainer');
+    container.innerHTML = `<p>Загрузка комнат...</p>`;
+
+    try {
+        const snapshot = await firebase.database().ref('rooms').once('value');
+        if (!snapshot.exists()) {
+            container.innerHTML = `<p>Нет доступных комнат</p>`;
+            return;
+        }
+
+        const rooms = snapshot.val();
+        const roomEntries = Object.entries(rooms)
+            .filter(([_, room]) => room.status === 'waiting')
+            .slice(0, 20);
+
+        if (roomEntries.length === 0) {
+            container.innerHTML = `<p>Нет доступных комнат</p>`;
+            return;
+        }
+
+        container.innerHTML = '';
+
+        roomEntries.forEach(([roomId, room]) => {
+            const div = document.createElement('div');
+            div.className = 'player-card';
+            div.innerHTML = `
+                <div class="player-name">Комната: ${roomId}</div>
+                <div class="player-status">${Object.keys(room.players || {}).length}/5</div>
+                <button class="small-button" onclick="joinSelectedRoom('${roomId}')">Присоединиться</button>
+            `;
+            container.appendChild(div);
+        });
+
+    } catch (error) {
+        console.error("Ошибка загрузки комнат:", error);
+        container.innerHTML = `<p>Ошибка загрузки комнат</p>`;
+    }
+}
+
+function joinSelectedRoom(roomId) {
+    multiplayerState.roomId = roomId;
+    multiplayerState.isHost = false;
+    showPage('multiplayer');
+    joinRoom();
+}
+
+
 // ==================== UI Functions ====================
 
 function showPage(pageId) {
@@ -1241,7 +1292,9 @@ function showPage(pageId) {
     document.querySelectorAll(".page").forEach(page => {
         page.style.display = "none";
     });
-    
+
+    if (pageId === 'room-list') loadAvailableRooms();
+
     // Show requested page
     const pageElement = document.getElementById(`${pageId}-page`);
     if (pageElement) {
