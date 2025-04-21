@@ -11,7 +11,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-    <div class="container">
+    <div id="loader" class="loader">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Загрузка приложения...</div>
+        </div>
+    </div>
+
+    <div class="container" id="app-container" style="display: none;">
         <!-- Главная страница -->
         <div id="home-page" class="page active">
             <div class="profile-info">
@@ -20,11 +27,14 @@
                 <span class="profile-gem">GEM: <span id="profileGemCount">0</span></span>
             </div>
             <h1 class="title">Исламские Викторины</h1>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="totalProgress"></div>
+                </div>
+                <span class="progress-text">Общий прогресс: <span id="totalProgressText">0%</span></span>
+            </div>
             <div class="main-buttons">
                 <button class="big-button" onclick="showPage('categories')">Викторина</button>
-                <button class="big-button" onclick="startMultiplayer()">Создать комнату</button>
-                <button class="big-button" onclick="showPage('room-list'); loadAvailableRooms()">Присоединиться к комнате</button>
-
             </div>
         </div>
 
@@ -35,11 +45,42 @@
             </button>
             <h1>Выберите категорию</h1>
             <div class="categories-container">
-                <button class="category-button" onclick="startQuiz('quran')">Коран</button>
-                <button class="category-button" onclick="startQuiz('hadisy')">Хадисы</button>
-                <button class="category-button" onclick="startQuiz('spodvijniki')">Сподвижники</button>
-                <button class="category-button" onclick="startQuiz('history')">История Ислама</button>
-                <button class="category-button" onclick="startQuiz('all')">По всем категориям</button>
+                <div class="category-card" onclick="startQuiz('quran')">
+                    <h3>Коран</h3>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="quranProgress"></div>
+                        </div>
+                        <span class="progress-text"><span id="quranProgressText">0%</span></span>
+                    </div>
+                </div>
+                <div class="category-card" onclick="startQuiz('hadisy')">
+                    <h3>Хадисы</h3>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="hadisyProgress"></div>
+                        </div>
+                        <span class="progress-text"><span id="hadisyProgressText">0%</span></span>
+                    </div>
+                </div>
+                <div class="category-card" onclick="startQuiz('spodvijniki')">
+                    <h3>Сподвижники</h3>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="spodvijnikiProgress"></div>
+                        </div>
+                        <span class="progress-text"><span id="spodvijnikiProgressText">0%</span></span>
+                    </div>
+                </div>
+                <div class="category-card" onclick="startQuiz('history')">
+                    <h3>История Ислама</h3>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="historyProgress"></div>
+                        </div>
+                        <span class="progress-text"><span id="historyProgressText">0%</span></span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -49,10 +90,16 @@
                 <img src="icons/back.svg" alt="Назад">
             </button>
             <h1>Викторина</h1>
+            <div class="quiz-progress">
+                <span id="currentQuestionNumber">1</span> из <span id="totalQuestions">10</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="quizProgress"></div>
+                </div>
+            </div>
             <div class="quiz-container">
                 <div class="question" id="question"></div>
                 <div class="answers" id="answers"></div>
-                <button class="next-question" id="nextQuestion" onclick="loadNextQuestion()">Следующий вопрос</button>
+                <button class="next-question" id="nextQuestion" onclick="loadNextQuestion()" disabled>Следующий вопрос</button>
             </div>
         </div>
 
@@ -137,57 +184,6 @@
                 </div>
             </div>
         </div>
-
-
-<!-- Список доступных комнат -->
-<div id="room-list-page" class="page">
-    <button class="back-button" onclick="showPage('home')">
-        <img src="icons/back.svg" alt="Назад">
-    </button>
-    <h1>Доступные комнаты</h1>
-    <div id="availableRoomsContainer">
-        <p>Загрузка комнат...</p>
-    </div>
-</div>
-
-
-
-        <!-- Страница мультиплеера -->
-<div id="multiplayer-page" class="page">
-    <button class="back-button" onclick="leaveMultiplayerRoom(); showPage('home')">
-        <img src="icons/back.svg" alt="Назад">
-    </button>
-    <h1>Мультиплеер</h1>
-    <div class="multiplayer-container">
-        <div id="lobby">
-            <div class="room-info">
-                <p>Комната: <span id="roomIdDisplay">Загрузка...</span></p>
-                <button class="small-button" onclick="copyRoomLink()">Скопировать ссылку</button>
-            </div>
-            <p id="status">Создание комнаты...</p>
-            <div class="players-container">
-                <h3>Игроки (<span id="playersCount">0</span>/5)</h3>
-                <div id="players-list"></div>
-            </div>
-            <button class="big-button" id="readyButton" onclick="toggleReady()">Готов</button>
-        </div>
-        
-        <!-- Измененная структура для игрового режима -->
-        <div id="game" style="display: none;">
-            <div class="quiz-container">
-                <div class="question show" id="mp-question"></div>
-                <div class="timer" id="mp-timer">20</div>
-                <div class="answers" id="mp-answers"></div>
-            </div>
-        </div>
-        
-        <div id="results" style="display: none;">
-            <h2>Результаты</h2>
-            <div id="scoreboard"></div>
-            <button class="big-button" onclick="leaveMultiplayerRoom(); showPage('home')">В меню</button>
-        </div>
-    </div>
-</div>
 
         <!-- Навигация -->
         <div class="navigation">

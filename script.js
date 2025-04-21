@@ -14,14 +14,24 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
+// Get database reference
+const database = firebase.database();
+
 // App variables
 let currentQuestionIndex = 0;
 let score = parseInt(localStorage.getItem("quizScore")) || 0;
-let shuffledQuestions = [];
+let questions = [];
 let userData = null;
-let userId = null;
+let userId = "guest_" + Math.random().toString(36).substr(2, 9); // Инициализируем сразу
 let referralCount = parseInt(localStorage.getItem("referralCount")) || 0;
 let currentCategory = '';
+let userProgress = JSON.parse(localStorage.getItem("userProgress")) || {
+    quran: { answered: 0, total: 0, lastQuestion: 0 },
+    hadisy: { answered: 0, total: 0, lastQuestion: 0 },
+    spodvijniki: { answered: 0, total: 0, lastQuestion: 0 },
+    history: { answered: 0, total: 0, lastQuestion: 0 }
+};
+
 let questionsByCategory = {
     quran: [],
     hadisy: [],
@@ -30,18 +40,13 @@ let questionsByCategory = {
     all: []
 };
 
-// Temporary questions
-const temporaryQuestions = {
+// Backup questions
+const backupQuestions = {
     quran: [
         {
             question: "Сколько сур в Коране?",
             answers: ["114", "113", "115", "112"],
             correctAnswer: 0
-        },
-        {
-            question: "Какая сура называется 'Сердцем Корана'?",
-            answers: ["Аль-Бакара", "Ясин", "Аль-Фатиха", "Аль-Ихлас"],
-            correctAnswer: 1
         }
     ],
     hadisy: [
@@ -57,73 +62,147 @@ const temporaryQuestions = {
             answers: ["Умар ибн аль-Хаттаб", "Абу Бакр ас-Сиддик", "Усман ибн Аффан", "Али ибн Абу Талиб"],
             correctAnswer: 1
         }
-    ]
+    ],
+    spodvijniki: []
 };
-temporaryQuestions.all = [...temporaryQuestions.quran, ...temporaryQuestions.hadisy, ...temporaryQuestions.history];
 
-// Multiplayer state
-let multiplayerState = {
-    roomId: null,
-    roomRef: null,
-    isHost: false,
-    isReady: false,
-    gameStarted: false,
-    currentQuestionIndex: 0,
-    playerAnswers: {},
-    scores: {},
-    timer: null,
-    listeners: [],
-    reconnectAttempts: 0
-};
+// Improved Firebase questions loading
+async function loadQuestionsFromFirebase() {
+    try {
+        console.log("Loading questions from Firebase...");
+        
+        const snapshot = await database.ref('questions').once('value');
+
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            console.log("Questions data received:", data);
+            
+            // Process each category
+            const processCategory = (category) => {
+                if (!data[category] || !Array.isArray(data[category])) {
+                    console.warn(`Invalid data for category ${category}, using backup`);
+                    return backupQuestions[category] || [];
+                }
+                
+                const validQuestions = data[category].filter(q => 
+                    q && q.question && q.answers && 
+                    Array.isArray(q.answers) && q.answers.length >= 2 &&
+                    typeof q.correctAnswer === 'number'
+                );
+                
+                return validQuestions.length > 0 ? validQuestions : (backupQuestions[category] || []);
+            };
+
+            questionsByCategory = {
+                quran: processCategory('quran'),
+                hadisy: processCategory('hadisy'),
+                history: processCategory('history'),
+                spodvijniki: processCategory('spodvijniki'),
+                all: []
+            };
+
+            // Update totals and combine all questions
+            Object.keys(questionsByCategory).forEach(category => {
+                if (category !== 'all') {
+                    userProgress[category].total = questionsByCategory[category].length;
+                }
+            });
+
+            questionsByCategory.all = [
+                ...questionsByCategory.quran,
+                ...questionsByCategory.hadisy,
+                ...questionsByCategory.history,
+                ...questionsByCategory.spodvijniki
+            ];
+
+            saveProgress();
+            console.log("Questions loaded successfully:", questionsByCategory);
+            return true;
+        } else {
+            console.log("No data in Firebase, using backup questions");
+            useBackupQuestions();
+            return false;
+        }
+    } catch (error) {
+        console.error("Error loading questions:", error);
+        useBackupQuestions();
+        return false;
+    }
+}
+
+function useBackupQuestions() {
+    console.log("Using backup questions");
+    questionsByCategory = {
+        quran: [...backupQuestions.quran],
+        hadisy: [...backupQuestions.hadisy],
+        history: [...backupQuestions.history],
+        spodvijniki: [...backupQuestions.spodvijniki],
+        all: [
+            ...backupQuestions.quran,
+            ...backupQuestions.hadisy,
+            ...backupQuestions.history,
+            ...backupQuestions.spodvijniki
+        ]
+    };
+
+    // Update progress totals
+    userProgress.quran.total = questionsByCategory.quran.length;
+    userProgress.hadisy.total = questionsByCategory.hadisy.length;
+    userProgress.history.total = questionsByCategory.history.length;
+    userProgress.spodvijniki.total = questionsByCategory.spodvijniki.length;
+
+    saveProgress();
+}
 
 // Initialize app
-document.addEventListener("DOMContentLoaded", async () => {
+async function initializeApp() {
     try {
-        console.log("Initializing app...");
+        document.getElementById('loader').style.display = 'flex';
         initTelegramWebApp();
         
-        await loadQuestionsFromFirebase();
+        // Initialize user ID before loading questions
+        if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+            userData = Telegram.WebApp.initDataUnsafe.user;
+            userId = userData.id.toString();
+        }
+        
+        // Load questions with retry logic
+        let loaded = false;
+        for (let i = 0; i < 3; i++) {
+            loaded = await loadQuestionsFromFirebase();
+            if (loaded) break;
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        if (!loaded) {
+            console.log("Using backup questions after retries");
+        }
+
         await initUserData();
         updateProfile();
         updateReferralStats();
         checkReferral();
-        checkRoomLink();
+        updateProgressBars();
+        
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
         showPage('home');
         setupCopyProtection();
-        
-        console.log("App initialized successfully");
-    } catch (error) {
-        console.error("Initialization error:", error);
-        questionsByCategory = temporaryQuestions;
-    }
-});
 
-// ==================== Firebase Functions ====================
-
-async function loadQuestionsFromFirebase() {
-    try {
-        console.log("Loading questions from Firebase...");
-        const snapshot = await firebase.database().ref('questions').once('value');
-        
-        if (snapshot.exists()) {
-            const firebaseQuestions = snapshot.val();
-            questionsByCategory = {
-                quran: [...(firebaseQuestions.quran || []), ...temporaryQuestions.quran],
-                hadisy: [...(firebaseQuestions.hadisy || []), ...temporaryQuestions.hadisy],
-                history: [...(firebaseQuestions.history || []), ...temporaryQuestions.history],
-                spodvijniki: [...(firebaseQuestions.spodvijniki|| [])],
-                all: []
-            };
-            questionsByCategory.all = [...questionsByCategory.quran, ...questionsByCategory.hadisy, ...questionsByCategory.spodvijniki, ...questionsByCategory.history];
-        } else {
-            questionsByCategory = temporaryQuestions;
-        }
     } catch (error) {
-        console.error("Error loading questions:", error);
-        questionsByCategory = temporaryQuestions;
+        console.error("App initialization failed:", error);
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        alert("Приложение загружено с ограниченным функционалом. Некоторые вопросы могут быть недоступны.");
+        showPage('home');
     }
 }
 
+// [Остальные функции остаются без изменений...]
+
+
+
+// USER DATA FUNCTIONS
 async function initUserData() {
     score = parseInt(localStorage.getItem("quizScore")) || 0;
     referralCount = parseInt(localStorage.getItem("referralCount")) || 0;
@@ -133,7 +212,7 @@ async function initUserData() {
         userId = userData.id.toString();
         
         try {
-            const userRef = firebase.database().ref('users/' + userId);
+            const userRef = database.ref('users/' + userId);
             const snapshot = await userRef.once('value');
             
             if (!snapshot.exists()) {
@@ -144,6 +223,7 @@ async function initUserData() {
                     username: userData.username || '',
                     score: score,
                     referrals: referralCount,
+                    progress: userProgress,
                     lastActive: firebase.database.ServerValue.TIMESTAMP,
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 });
@@ -151,9 +231,20 @@ async function initUserData() {
                 const user = snapshot.val();
                 score = user.score || score;
                 referralCount = user.referrals || referralCount;
+                
+                if (user.progress) {
+                    userProgress = user.progress;
+                    localStorage.setItem("userProgress", JSON.stringify(userProgress));
+                }
+                
                 localStorage.setItem("quizScore", score);
                 localStorage.setItem("referralCount", referralCount);
-                await userRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP });
+                
+                await userRef.update({ 
+                    lastActive: firebase.database.ServerValue.TIMESTAMP,
+                    score: score,
+                    referrals: referralCount
+                });
             }
         } catch (error) {
             console.error("User init error:", error);
@@ -169,7 +260,7 @@ async function initUserData() {
 async function updateUserData(updates) {
     try {
         if (!userId.startsWith("guest_")) {
-            await firebase.database().ref('users/' + userId).update({
+            await database.ref('users/' + userId).update({
                 ...updates,
                 lastActive: firebase.database.ServerValue.TIMESTAMP
             });
@@ -182,713 +273,168 @@ async function updateUserData(updates) {
     }
 }
 
-// ==================== Quiz Functions ====================
-
+// QUIZ FUNCTIONS
 function startQuiz(category) {
-    if (!questionsByCategory[category]?.length) {
-        alert("Вопросы загружаются, попробуйте позже");
+    if (!questionsByCategory[category] || questionsByCategory[category].length === 0) {
+        alert("Вопросы для этой категории временно недоступны. Попробуйте позже.");
         return;
     }
     
     currentCategory = category;
-    shuffledQuestions = shuffleArray([...questionsByCategory[category]]);
-    currentQuestionIndex = 0;
+    questions = [...questionsByCategory[category]];
+    currentQuestionIndex = userProgress[category].lastQuestion || 0;
+    
+    if (currentQuestionIndex >= questions.length) {
+        currentQuestionIndex = 0;
+        userProgress[category].lastQuestion = 0;
+        saveProgress();
+    }
     
     showPage('quiz');
+    updateQuizProgress();
     loadQuestion();
 }
 
-function loadQuestion() {
-    if (currentQuestionIndex >= shuffledQuestions.length) {
-        currentQuestionIndex = 0;
-        shuffledQuestions = shuffleArray([...shuffledQuestions]);
-    }
+function updateQuizProgress() {
+    document.getElementById('currentQuestionNumber').textContent = currentQuestionIndex + 1;
+    document.getElementById('totalQuestions').textContent = questions.length;
+    const progressPercent = Math.round(((currentQuestionIndex + 1) / questions.length) * 100);
+    document.getElementById('quizProgress').style.width = `${progressPercent}%`;
+}
 
+function loadQuestion() {
+    updateQuizProgress();
+    
     const questionElement = document.getElementById("question");
     const answersContainer = document.getElementById("answers");
     const nextButton = document.getElementById("nextQuestion");
-
-    questionElement.classList.remove("show");
-    nextButton.classList.remove("show");
+    
+    questionElement.textContent = "";
     answersContainer.innerHTML = "";
-
-    setTimeout(() => {
-        const questionData = shuffledQuestions[currentQuestionIndex];
-        questionElement.textContent = questionData.question;
-        questionElement.classList.add("show");
-
-        questionData.answers.forEach((answer, index) => {
-            const button = document.createElement("button");
-            button.className = "answer-button";
-            button.textContent = answer;
-            button.onclick = () => checkAnswer(index);
-            setTimeout(() => button.classList.add("show"), index * 100);
-            answersContainer.appendChild(button);
-        });
-
-        setTimeout(() => nextButton.classList.add("show"), 500);
-    }, 300);
+    nextButton.disabled = true;
+    
+    const questionData = questions[currentQuestionIndex];
+    questionElement.textContent = questionData.question;
+    
+    questionData.answers.forEach((answer, index) => {
+        const button = document.createElement("button");
+        button.className = "answer-button";
+        button.textContent = answer;
+        button.onclick = () => checkAnswer(index);
+        answersContainer.appendChild(button);
+    });
 }
 
 function checkAnswer(index) {
-    const questionData = shuffledQuestions[currentQuestionIndex];
+    const questionData = questions[currentQuestionIndex];
     const buttons = document.querySelectorAll(".answer-button");
-
+    
     buttons.forEach(btn => btn.disabled = true);
-
+    document.getElementById("nextQuestion").disabled = false;
+    
     if (index === questionData.correctAnswer) {
         buttons[index].classList.add("correct");
+        
+        if (currentQuestionIndex >= userProgress[currentCategory].answered) {
+            userProgress[currentCategory].answered++;
+            score += 5;
+            updateGemDisplay();
+        }
     } else {
         buttons[index].classList.add("incorrect");
         buttons[questionData.correctAnswer].classList.add("correct");
     }
-
-    setTimeout(loadNextQuestion, 1500);
+    
+    userProgress[currentCategory].lastQuestion = currentQuestionIndex;
+    saveProgress();
 }
 
 function loadNextQuestion() {
     currentQuestionIndex++;
-    loadQuestion();
-}
-
-// ==================== Multiplayer Functions ====================
-
-async function startMultiplayer() {
-    try {
-        cleanupMultiplayer();
-        
-        const activeRoom = await checkActiveRoom();
-        if (activeRoom) {
-            const roomRef = firebase.database().ref('rooms/' + activeRoom);
-            const snapshot = await roomRef.once('value');
-            
-            if (snapshot.exists() && snapshot.val().status === 'waiting') {
-                multiplayerState.roomId = activeRoom;
-                multiplayerState.isHost = false;
-                await joinRoom();
-                return;
-            } else if (!userId.startsWith("guest_")) {
-                await firebase.database().ref('users/' + userId + '/currentRoom').remove();
-            }
-        }
-        
-        showPage('multiplayer');
-        document.getElementById('lobby').style.display = 'block';
-        document.getElementById('game').style.display = 'none';
-        document.getElementById('results').style.display = 'none';
-        
-        multiplayerState.roomId = generateRoomId();
-        multiplayerState.isHost = true;
-        await createRoom();
-    } catch (error) {
-        console.error("Multiplayer start error:", error);
-        updateStatus("Ошибка создания комнаты");
-        showPage('home');
-    }
-}
-
-async function createRoom() {
-    multiplayerState.roomRef = firebase.database().ref('rooms/' + multiplayerState.roomId);
     
-    try {
-        if (!userId.startsWith("guest_")) {
-            await firebase.database().ref('users/' + userId + '/currentRoom').set(multiplayerState.roomId);
-        }
-        
-        await multiplayerState.roomRef.set({
-            status: 'waiting',
-            players: {},
-            currentQuestion: 0,
-            questions: [],
-            createdAt: firebase.database.ServerValue.TIMESTAMP,
-            version: 2
-        });
-        
-        await addPlayerToRoom();
-        setupRoomListeners();
-        updateStatus("Ожидание игроков...");
-        document.getElementById('roomIdDisplay').textContent = multiplayerState.roomId;
-    } catch (error) {
-        console.error("Room creation error:", error);
-        throw error;
-    }
-}
-
-async function joinRoom() {
-    try {
-        multiplayerState.roomRef = firebase.database().ref('rooms/' + multiplayerState.roomId);
-        const snapshot = await multiplayerState.roomRef.once('value');
-        
-        if (!snapshot.exists()) throw new Error("Комната не найдена");
-        
-        const room = snapshot.val();
-        if (room.status !== 'waiting') throw new Error("Игра уже началась");
-        if (Object.keys(room.players).length >= 5) throw new Error("Комната заполнена");
-        
-        if (!userId.startsWith("guest_")) {
-            await firebase.database().ref('users/' + userId + '/currentRoom').set(multiplayerState.roomId);
-        }
-        
-        await addPlayerToRoom();
-        setupRoomListeners();
-        document.getElementById('roomIdDisplay').textContent = multiplayerState.roomId;
-    } catch (error) {
-        console.error("Join room error:", error);
-        updateStatus(error.message);
-        setTimeout(() => showPage('home'), 2000);
-        throw error;
-    }
-}
-
-async function addPlayerToRoom() {
-    try {
-        const playerData = {
-            id: userId,
-            name: userData ? `${userData.first_name} ${userData.last_name || ''}`.trim() : "Гость",
-            avatar: userData?.photo_url || "icons/avatar.svg",
-            isReady: false,
-            score: 0,
-            lastActive: firebase.database.ServerValue.TIMESTAMP,
-            connection: 'online'
-        };
-        
-        await multiplayerState.roomRef.child('players/' + userId).set(playerData);
-    } catch (error) {
-        console.error("Add player error:", error);
-        throw error;
-    }
-}
-
-function setupRoomListeners() {
-    multiplayerState.listeners.forEach(listener => {
-        if (listener.ref && listener.eventType && listener.callback) {
-            listener.ref.off(listener.eventType, listener.callback);
-        }
-    });
-    multiplayerState.listeners = [];
-    
-    const roomListener = multiplayerState.roomRef.on('value', async (snapshot) => {
-        const room = snapshot.val();
-        if (!room) {
-            updateStatus("Комната была закрыта");
-            setTimeout(() => showPage('home'), 2000);
-            return;
-        }
-        
-        try {
-            await updatePlayersList(room.players);
-            
-            switch (room.status) {
-                case 'starting':
-                    if (!multiplayerState.gameStarted) await startGame(room);
-                    break;
-                case 'in_progress':
-                    if (multiplayerState.gameStarted) {
-                        await handleGameProgress(room);
-                    } else {
-                        await reconnectToGame(room);
-                    }
-                    break;
-                case 'finished':
-                    if (multiplayerState.gameStarted) showResults(room.results);
-                    break;
-            }
-        } catch (error) {
-            console.error("Room listener error:", error);
-        }
-    });
-    
-    const connectionListener = multiplayerState.roomRef.child('players').on('child_changed', (snapshot) => {
-        const player = snapshot.val();
-        if (player.id === userId) return;
-        
-        const playerElement = document.getElementById(`player-${player.id}`);
-        if (playerElement) {
-            const statusElement = playerElement.querySelector('.player-status');
-            if (statusElement) {
-                statusElement.textContent = player.connection === 'online' ? 
-                    (player.isReady ? '✓ Готов' : 'Не готов') : 'Оффлайн';
-            }
-        }
-    });
-    
-    multiplayerState.listeners.push(
-        { ref: multiplayerState.roomRef, eventType: 'value', callback: roomListener },
-        { ref: multiplayerState.roomRef.child('players'), eventType: 'child_changed', callback: connectionListener }
-    );
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-}
-
-async function reconnectToGame(room) {
-    try {
-        multiplayerState.gameStarted = true;
-        multiplayerState.currentQuestionIndex = room.currentQuestion || 0;
-        
-        multiplayerState.scores = {};
-        Object.keys(room.players).forEach(playerId => {
-            multiplayerState.scores[playerId] = room.players[playerId].score || 0;
-        });
-        
-        document.getElementById('lobby').style.display = 'none';
-        document.getElementById('game').style.display = 'block';
-        
-        if (room.questions && room.questions.length > 0 && 
-            multiplayerState.currentQuestionIndex < room.questions.length) {
-            loadMultiplayerQuestion(room.questions[multiplayerState.currentQuestionIndex]);
-            
-            const questionStartTime = room.startedAt + (multiplayerState.currentQuestionIndex * 20000);
-            const timeLeft = Math.max =(1, Math.floor((questionStartTime + 20000 - Date.now()) / 1000));
-            
-            startQuestionTimer(timeLeft);
-        }
-        
-        await multiplayerState.roomRef.child(`players/${userId}/connection`).set('online');
-    } catch (error) {
-        console.error("Reconnect error:", error);
-        throw error;
-    }
-}
-
-function handleBeforeUnload() {
-    if (multiplayerState.roomRef && userId) {
-        multiplayerState.roomRef.child(`players/${userId}/connection`).set('offline');
-        
-        if (multiplayerState.isHost) {
-            multiplayerState.roomRef.child('players').once('value').then(snapshot => {
-                const players = snapshot.val() || {};
-                const onlinePlayers = Object.values(players).filter(p => p.connection === 'online');
-                
-                if (onlinePlayers.length === 0) {
-                    multiplayerState.roomRef.remove();
-                }
-            });
-        }
-    }
-}
-
-async function updatePlayersList(players) {
-    const playersList = document.getElementById('players-list');
-    if (!playersList) return;
-    
-    playersList.innerHTML = '';
-    
-    let readyCount = 0;
-    let totalPlayers = 0;
-    
-    Object.values(players).forEach(player => {
-        if (!player) return;
-        
-        totalPlayers++;
-        if (player.isReady) readyCount++;
-        
-        const playerElement = document.createElement('div');
-        playerElement.className = 'player-card';
-        playerElement.id = `player-${player.id}`;
-        playerElement.innerHTML = `
-            <div class="player-avatar">
-                ${player.name.charAt(0).toUpperCase()}
-            </div>
-            <div class="player-name">${player.name}</div>
-            <div class="player-status">${player.connection === 'online' ? 
-                (player.isReady ? '✓ Готов' : 'Не готов') : 'Оффлайн'}</div>
-        `;
-        playersList.appendChild(playerElement);
-    });
-    
-    document.getElementById('playersCount').textContent = totalPlayers;
-    
-    if (multiplayerState.isHost && totalPlayers >= 2 && readyCount === totalPlayers) {
-        await prepareGame();
-    }
-}
-
-async function toggleReady() {
-    try {
-        const newReadyState = !multiplayerState.isReady;
-        multiplayerState.isReady = newReadyState;
-        
-        await multiplayerState.roomRef.child(`players/${userId}/isReady`).set(newReadyState);
-        document.getElementById('readyButton').classList.toggle('ready', newReadyState);
-        document.getElementById('readyButton').textContent = newReadyState ? 'Отменить' : 'Готов';
-    } catch (error) {
-        console.error("Toggle ready error:", error);
-        updateStatus("Ошибка изменения статуса");
-    }
-}
-
-async function prepareGame() {
-    if (!multiplayerState.isHost) return;
-    
-    try {
-        const allQuestions = [...questionsByCategory.all];
-        const selectedQuestions = shuffleArray(allQuestions).slice(0, 20);
-        
-        await multiplayerState.roomRef.update({
-            status: 'starting',
-            questions: selectedQuestions
-        });
-    } catch (error) {
-        console.error("Prepare game error:", error);
-        updateStatus("Ошибка подготовки игры");
-    }
-}
-
-async function startGame(room) {
-    try {
-        if (!room.questions || room.questions.length === 0) {
-            throw new Error("No questions available");
-        }
-
-        multiplayerState.gameStarted = true;
-        multiplayerState.currentQuestionIndex = 0;
-        multiplayerState.scores = {};
-        
-        Object.keys(room.players).forEach(playerId => {
-            multiplayerState.scores[playerId] = 0;
-        });
-        
-        document.getElementById('lobby').style.display = 'none';
-        document.getElementById('game').style.display = 'block';
-        
-        loadMultiplayerQuestion(room.questions[0]);
-        startQuestionTimer(20);
-        
-        if (multiplayerState.isHost) {
-            await multiplayerState.roomRef.update({
-                status: 'in_progress',
-                currentQuestion: 0,
-                startedAt: Date.now()
-            });
-        }
-    } catch (error) {
-        console.error("Start game error:", error);
-        updateStatus("Ошибка начала игры: " + error.message);
-    }
-}
-
-function loadMultiplayerQuestion(questionData) {
-    console.log("Loading MP question:", questionData);
-    
-    const questionElement = document.getElementById('mp-question');
-    const answersContainer = document.getElementById('mp-answers');
-    
-    questionElement.textContent = '';
-    answersContainer.innerHTML = '';
-    
-    if (!questionData || !questionData.question || !questionData.answers) {
-        console.error("Invalid question data:", questionData);
-        questionElement.textContent = "Ошибка загрузки вопроса";
+    if (currentQuestionIndex >= questions.length) {
+        alert("Вы завершили эту викторину!");
+        showPage('categories');
         return;
     }
     
-    questionElement.textContent = questionData.question;
+    loadQuestion();
+}
+
+// PROGRESS FUNCTIONS
+function saveProgress() {
+    localStorage.setItem("userProgress", JSON.stringify(userProgress));
+    updateProgressBars();
     
-    questionData.answers.forEach((answer, index) => {
-        const button = document.createElement('button');
-        button.className = 'answer-button';
-        button.textContent = answer;
-        button.onclick = () => submitAnswer(index, questionData.correctAnswer);
-        answersContainer.appendChild(button);
+    if (!userId.startsWith("guest_")) {
+        database.ref(`users/${userId}/progress`).set(userProgress);
+    }
+}
+
+function updateProgressBars() {
+    updateCategoryProgress('quran');
+    updateCategoryProgress('hadisy');
+    updateCategoryProgress('spodvijniki');
+    updateCategoryProgress('history');
+    
+    const totalAnswered = Object.values(userProgress).reduce((sum, cat) => sum + cat.answered, 0);
+    const totalQuestions = Object.values(userProgress).reduce((sum, cat) => sum + cat.total, 0);
+    const totalProgress = totalQuestions > 0 ? Math.round((totalAnswered / totalQuestions) * 100) : 0;
+    
+    document.getElementById('totalProgress').style.width = `${totalProgress}%`;
+    document.getElementById('totalProgressText').textContent = `${totalProgress}%`;
+}
+
+function updateCategoryProgress(category) {
+    const progress = userProgress[category];
+    const progressPercent = progress.total > 0 ? Math.round((progress.answered / progress.total) * 100) : 0;
+    
+    document.getElementById(`${category}Progress`).style.width = `${progressPercent}%`;
+    document.getElementById(`${category}ProgressText`).textContent = `${progressPercent}%`;
+}
+
+// UI FUNCTIONS
+function showPage(pageId) {
+    document.querySelectorAll(".page").forEach(page => {
+        page.style.display = "none";
+    });
+
+    const pageElement = document.getElementById(`${pageId}-page`);
+    if (pageElement) {
+        pageElement.style.display = "block";
+        
+        if (pageId === 'leaders') loadLeaderboard();
+        if (pageId === 'shop') updateGemDisplay();
+    }
+    
+    document.querySelectorAll(".nav-button").forEach(button => {
+        button.classList.remove("active");
     });
     
-    document.getElementById('game').style.display = 'block';
-    document.getElementById('lobby').style.display = 'none';
-    document.getElementById('results').style.display = 'none';
+    const activeButton = document.querySelector(`.nav-button[onclick*="showPage('${pageId}')"]`);
+    if (activeButton) activeButton.classList.add("active");
 }
 
-function startQuestionTimer(seconds) {
-    clearInterval(multiplayerState.timer);
-    
-    let timeLeft = seconds;
-    const timerElement = document.getElementById('mp-timer');
-    timerElement.textContent = timeLeft;
-    timerElement.style.display = 'block';
-    
-    multiplayerState.timer = setInterval(() => {
-        timeLeft--;
-        timerElement.textContent = timeLeft;
-        
-        if (timeLeft <= 0) {
-            clearInterval(multiplayerState.timer);
-            if (multiplayerState.isHost) {
-                proceedToNextQuestion();
-            }
-        }
-    }, 1000);
-}
-
-async function submitAnswer(answerIndex, correctAnswer) {
-    try {
-        console.log("Submitting answer:", answerIndex);
-        
-        const buttons = document.querySelectorAll('#mp-answers .answer-button');
-        buttons.forEach(btn => btn.disabled = true);
-        
-        if (answerIndex === correctAnswer) {
-            buttons[answerIndex].classList.add('correct');
-            multiplayerState.scores[userId] = (multiplayerState.scores[userId] || 0) + 1;
-            await multiplayerState.roomRef.child(`players/${userId}/score`).transaction(score => {
-                return (score || 0) + 1;
-            });
-        } else {
-            buttons[answerIndex].classList.add('incorrect');
-            buttons[correctAnswer].classList.add('correct');
-        }
-        
-        multiplayerState.playerAnswers[multiplayerState.currentQuestionIndex] = answerIndex;
-    } catch (error) {
-        console.error("Submit answer error:", error);
-    }
-}
-
-async function proceedToNextQuestion() {
-    if (!multiplayerState.isHost) return;
-    
-    try {
-        multiplayerState.currentQuestionIndex++;
-        
-        const snapshot = await multiplayerState.roomRef.once('value');
-        const room = snapshot.val();
-        const questions = room.questions || [];
-        
-        if (multiplayerState.currentQuestionIndex < questions.length) {
-            await multiplayerState.roomRef.update({
-                currentQuestion: multiplayerState.currentQuestionIndex
-            });
-        } else {
-            await endGame();
-        }
-    } catch (error) {
-        console.error("Proceed to next question error:", error);
-    }
-}
-
-async function handleGameProgress(room) {
-    if (room.currentQuestion !== multiplayerState.currentQuestionIndex) {
-        multiplayerState.currentQuestionIndex = room.currentQuestion;
-        
-        if (multiplayerState.currentQuestionIndex < room.questions.length) {
-            loadMultiplayerQuestion(room.questions[multiplayerState.currentQuestionIndex]);
-            
-            const questionStartTime = room.startedAt + (multiplayerState.currentQuestionIndex * 20000);
-            const timeLeft = Math.max(1, Math.floor((questionStartTime + 20000 - Date.now()) / 1000));
-            
-            startQuestionTimer(timeLeft);
-        }
-    }
-}
-
-async function endGame() {
-    try {
-        const snapshot = await multiplayerState.roomRef.child('players').once('value');
-        const players = snapshot.val() || {};
-        const results = [];
-        
-        Object.keys(players).forEach(playerId => {
-            results.push({
-                id: playerId,
-                name: players[playerId].name,
-                score: players[playerId].score || 0
-            });
-        });
-        
-        results.sort((a, b) => b.score - a.score);
-        await awardPrizes(results);
-        
-        await multiplayerState.roomRef.update({
-            status: 'finished',
-            results: results,
-            finishedAt: Date.now()
-        });
-        
-        await cleanupAfterGame();
-    } catch (error) {
-        console.error("End game error:", error);
-    }
-}
-
-async function awardPrizes(results) {
-    try {
-        if (results.length > 0 && !results[0].id.startsWith("guest_")) {
-            await firebase.database().ref(`users/${results[0].id}/score`).transaction(score => {
-                return (score || 0) + 50;
-            });
-        }
-        
-        if (results.length > 1 && !results[1].id.startsWith("guest_")) {
-            await firebase.database().ref(`users/${results[1].id}/score`).transaction(score => {
-                return (score || 0) + 30;
-            });
-        }
-        
-        if (results.length > 2 && !results[2].id.startsWith("guest_")) {
-            await firebase.database().ref(`users/${results[2].id}/score`).transaction(score => {
-                return (score || 0) + 20;
-            });
-        }
-    } catch (error) {
-        console.error("Award prizes error:", error);
-    }
-}
-
-function showResults(results) {
-    multiplayerState.gameStarted = false;
-    
-    document.getElementById('game').style.display = 'none';
-    document.getElementById('results').style.display = 'block';
-    
-    const scoreboard = document.getElementById('scoreboard');
-    scoreboard.innerHTML = '';
-    
-    const sortedResults = results.sort((a, b) => b.score - a.score);
-    
-    sortedResults.forEach((player, index) => {
-        const resultElement = document.createElement('div');
-        resultElement.className = 'result-item';
-        
-        let prize = '';
-        if (index === 0) prize = ' (+50 GEM)';
-        else if (index === 1) prize = ' (+30 GEM)';
-        else if (index === 2) prize = ' (+20 GEM)';
-        
-        resultElement.innerHTML = `
-            <div class="result-position">${index + 1}</div>
-            <div class="result-name">${player.name}</div>
-            <div class="result-score">${player.score} ${prize}</div>
-        `;
-        
-        scoreboard.appendChild(resultElement);
-    });
-}
-
-async function leaveMultiplayerRoom() {
-    try {
-        if (multiplayerState.roomRef && userId) {
-            await multiplayerState.roomRef.child(`players/${userId}`).remove();
-            
-            if (multiplayerState.isHost) {
-                const snapshot = await multiplayerState.roomRef.child('players').once('value');
-                if (!snapshot.exists() || snapshot.numChildren() === 0) {
-                    await multiplayerState.roomRef.remove();
-                    await cleanupAfterGame();
-                }
-            }
-        }
-    } catch (error) {
-        console.error("Leave room error:", error);
-    } finally {
-        cleanupMultiplayer();
-        showPage('home');
-    }
-}
-
-async function cleanupAfterGame() {
-    try {
-        if (multiplayerState.roomId) {
-            const snapshot = await firebase.database().ref('users')
-                .orderByChild('currentRoom')
-                .equalTo(multiplayerState.roomId)
-                .once('value');
-                
-            if (snapshot.exists()) {
-                const updates = {};
-                snapshot.forEach(user => {
-                    updates[`users/${user.key}/currentRoom`] = null;
-                });
-                await firebase.database().ref().update(updates);
-            }
-        }
-    } catch (error) {
-        console.error("Cleanup after game error:", error);
-    }
-}
-
-function cleanupMultiplayer() {
-    clearInterval(multiplayerState.timer);
-    
-    multiplayerState.listeners.forEach(listener => {
-        if (listener.ref && listener.eventType && listener.callback) {
-            listener.ref.off(listener.eventType, listener.callback);
-        }
-    });
-    multiplayerState.listeners = [];
-    
-    window.removeEventListener('beforeunload', handleBeforeUnload);
-    
-    multiplayerState = {
-        roomId: null,
-        roomRef: null,
-        isHost: false,
-        isReady: false,
-        gameStarted: false,
-        currentQuestionIndex: 0,
-        playerAnswers: {},
-        scores: {},
-        timer: null,
-        listeners: [],
-        reconnectAttempts: 0
-    };
-}
-
-// ==================== Helper Functions ====================
-
-function generateRoomId() {
-    return 'room_' + Math.random().toString(36).substr(2, 6).toUpperCase();
-}
-
-async function checkActiveRoom() {
-    if (!userId || userId.startsWith("guest_")) return null;
-    
-    try {
-        const snapshot = await firebase.database().ref('users/' + userId + '/currentRoom').once('value');
-        return snapshot.val();
-    } catch (error) {
-        console.error("Check active room error:", error);
-        return null;
-    }
-}
-
-function copyRoomLink() {
-    const link = `${window.location.origin}${window.location.pathname}?room=${multiplayerState.roomId}`;
-    navigator.clipboard.writeText(link).then(() => {
-        if (window.Telegram?.WebApp) {
-            Telegram.WebApp.showAlert('Ссылка скопирована');
-        } else {
-            alert('Ссылка скопирована');
-        }
-    }).catch(err => {
-        console.error('Copy error:', err);
-    });
-}
-
-function updateStatus(message) {
-    const statusElement = document.getElementById('status');
-    if (statusElement) {
-        statusElement.textContent = message;
-    }
-}
-
-function checkRoomLink() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomId = urlParams.get('room');
-    
-    if (roomId) {
-        showPage('multiplayer');
-        multiplayerState.roomId = roomId;
-        multiplayerState.isHost = false;
-        joinRoom();
-    }
-}
-
-// ==================== User Functions ====================
-
-function updateGemDisplay() {
-    document.getElementById("profileGemCount").textContent = score;
-    document.getElementById("gemBalance").textContent = score;
+function openProfileModal() {
+    const modal = document.getElementById("profileModal");
+    modal.style.display = "flex";
     document.getElementById("modalUserGem").textContent = score;
+    
+    if (userData) {
+        document.getElementById("modalUserName").textContent = 
+            `${userData.first_name} ${userData.last_name || ''}`.trim();
+        document.getElementById("modalUserId").textContent = userData.id || "Не определен";
+    } else {
+        document.getElementById("modalUserName").textContent = "Гость";
+        document.getElementById("modalUserId").textContent = "Гостевой режим";
+    }
 }
 
+function closeProfileModal() {
+    document.getElementById("profileModal").style.display = "none";
+}
+
+// OTHER FUNCTIONS
 function initTelegramWebApp() {
     if (window.Telegram?.WebApp) {
         console.log("Telegram WebApp initialized");
@@ -902,15 +448,33 @@ function initTelegramWebApp() {
 
 function updateProfile() {
     const profileName = document.getElementById("profileName");
+    const modalUserName = document.getElementById("modalUserName");
+    const modalUserId = document.getElementById("modalUserId");
+    
     if (userData) {
-        profileName.textContent = `${userData.first_name} ${userData.last_name || ''}`.trim();
+        const fullName = `${userData.first_name} ${userData.last_name || ''}`.trim();
+        profileName.textContent = fullName;
+        modalUserName.textContent = fullName;
+        modalUserId.textContent = userData.id || "Не определен";
     } else {
         profileName.textContent = "Гость";
+        modalUserName.textContent = "Гость";
+        modalUserId.textContent = "Гостевой режим";
     }
 }
 
-// ==================== Referral System ====================
+function updateGemDisplay() {
+    document.getElementById("profileGemCount").textContent = score;
+    document.getElementById("gemBalance").textContent = score;
+    document.getElementById("modalUserGem").textContent = score;
+    localStorage.setItem("quizScore", score);
+    
+    if (!userId.startsWith("guest_")) {
+        updateUserData({ score: score });
+    }
+}
 
+// REFERRAL SYSTEM
 function checkReferral() {
     const urlParams = new URLSearchParams(window.location.search);
     const refUserId = urlParams.get("ref");
@@ -923,7 +487,7 @@ function checkReferral() {
             addReferral();
             
             if (!refUserId.startsWith("guest_")) {
-                firebase.database().ref('users/' + refUserId).transaction(user => {
+                database.ref('users/' + refUserId).transaction(user => {
                     if (user) user.score = (user.score || 0) + 5;
                     return user;
                 });
@@ -986,8 +550,7 @@ function shareReferralLink() {
     window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`, '_blank');
 }
 
-// ==================== Leaderboard Functions ====================
-
+// LEADERBOARD FUNCTIONS
 async function loadLeaderboard() {
     const leaderboardElement = document.getElementById("leaderboard");
     
@@ -999,7 +562,7 @@ async function loadLeaderboard() {
             </li>
         `;
 
-        const snapshot = await firebase.database().ref('users')
+        const snapshot = await database.ref('users')
             .orderByChild('score')
             .limitToLast(10)
             .once('value');
@@ -1044,7 +607,6 @@ function renderLeaderboard(element, users) {
 function showNoDataMessage(element) {
     element.innerHTML = `
         <li class="no-data">
-            <img src="icons/no-data.svg" alt="Нет данных">
             <span>Пока никто не участвовал</span>
         </li>
     `;
@@ -1053,19 +615,15 @@ function showNoDataMessage(element) {
 function showErrorMessage(element) {
     element.innerHTML = `
         <li class="error">
-            <img src="icons/error.svg" alt="Ошибка">
             <div>
                 <span>Ошибка загрузки</span>
-                <button class="retry-button">Повторить</button>
+                <button class="retry-button" onclick="loadLeaderboard()">Повторить</button>
             </div>
         </li>
     `;
-    
-    element.querySelector('.retry-button').addEventListener('click', loadLeaderboard);
 }
 
-// ==================== Shop Functions ====================
-
+// SHOP FUNCTIONS
 function flipBook(book) {
     book.classList.toggle("flipped");
 }
@@ -1084,7 +642,7 @@ async function buyItem(price, itemName, event) {
 async function savePurchase(itemName, price) {
     try {
         if (!userId.startsWith("guest_")) {
-            await firebase.database().ref(`users/${userId}/purchases`).push({
+            await database.ref(`users/${userId}/purchases`).push({
                 item: itemName,
                 price: price,
                 date: firebase.database.ServerValue.TIMESTAMP
@@ -1095,120 +653,7 @@ async function savePurchase(itemName, price) {
     }
 }
 
-async function loadAvailableRooms() {
-    const container = document.getElementById('availableRoomsContainer');
-    container.innerHTML = `<p>Загрузка комнат...</p>`;
-
-    try {
-        const snapshot = await firebase.database().ref('rooms').once('value');
-        if (!snapshot.exists()) {
-            container.innerHTML = `<p>Нет доступных комнат</p>`;
-            return;
-        }
-
-        const rooms = snapshot.val();
-        const roomEntries = Object.entries(rooms)
-            .filter(([_, room]) => room.status === 'waiting')
-            .slice(0, 20);
-
-        if (roomEntries.length === 0) {
-            container.innerHTML = `<p>Нет доступных комнат</p>`;
-            return;
-        }
-
-        container.innerHTML = '';
-
-        roomEntries.forEach(([roomId, room]) => {
-            const div = document.createElement('div');
-            div.className = 'player-card';
-            div.innerHTML = `
-                <div class="player-name">Комната: ${roomId}</div>
-                <div class="player-status">${Object.keys(room.players || {}).length}/5</div>
-                <button class="small-button" onclick="joinSelectedRoom('${roomId}')">Присоединиться</button>
-            `;
-            container.appendChild(div);
-        });
-
-    } catch (error) {
-        console.error("Ошибка загрузки комнат:", error);
-        container.innerHTML = `<p>Ошибка загрузки комнат</p>`;
-    }
-}
-
-function joinSelectedRoom(roomId) {
-    multiplayerState.roomId = roomId;
-    multiplayerState.isHost = false;
-    showPage('multiplayer');
-    joinRoom();
-}
-
-
-// ==================== UI Functions ====================
-
-function showPage(pageId) {
-    // Hide all pages
-    document.querySelectorAll(".page").forEach(page => {
-        page.style.display = "none";
-    });
-
-    if (pageId === 'room-list') loadAvailableRooms();
-
-    // Show requested page
-    const pageElement = document.getElementById(`${pageId}-page`);
-    if (pageElement) {
-        pageElement.style.display = "block";
-        
-        // Special actions for some pages
-        if (pageId === 'leaders') loadLeaderboard();
-        if (pageId === 'shop') updateGemDisplay();
-    }
-    
-    // Update active nav button
-    document.querySelectorAll(".nav-button").forEach(button => {
-        button.classList.remove("active");
-    });
-    
-    const activeButton = document.querySelector(`.nav-button[onclick*="showPage('${pageId}')"]`);
-    if (activeButton) activeButton.classList.add("active");
-}
-
-function openProfileModal() {
-    const modal = document.getElementById("profileModal");
-    modal.style.display = "flex";
-    document.getElementById("modalUserGem").textContent = score;
-    
-    if (userData) {
-        document.getElementById("modalUserName").textContent = 
-            `${userData.first_name} ${userData.last_name || ''}`.trim();
-        document.getElementById("modalUserId").textContent = userData.id || "Не определен";
-    } else {
-        document.getElementById("modalUserName").textContent = "Гость";
-        document.getElementById("modalUserId").textContent = "Гостевой режим";
-    }
-}
-
-function closeProfileModal() {
-    document.getElementById("profileModal").style.display = "none";
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    if (event.target === document.getElementById("profileModal")) {
-        closeProfileModal();
-    }
-};
-
-// ==================== Utility Functions ====================
-
-function shuffleArray(array) {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-}
-
+// UTILITY FUNCTIONS
 function setupCopyProtection() {
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
@@ -1245,3 +690,6 @@ async function updateScore(points) {
     
     updateGemDisplay();
 }
+
+// Initialize the app when DOM is loaded
+document.addEventListener("DOMContentLoaded", initializeApp);
